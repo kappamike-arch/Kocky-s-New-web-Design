@@ -1,0 +1,69 @@
+========================================
+WHM ROOT ACCESS COMMANDS FOR BRUNCH FIX
+========================================
+
+If you have WHM root access, run these commands:
+
+1. Make the script executable:
+   chmod +x /home/stagingkockys/public_html/current/backend/WHM-ROOT-FIX.sh
+
+2. Run the fix script:
+   /home/stagingkockys/public_html/current/backend/WHM-ROOT-FIX.sh
+
+OR run these commands manually in WHM Terminal:
+
+1. Switch to stagingkockys user:
+   su - stagingkockys
+
+2. Navigate to backend directory:
+   cd /home/stagingkockys/public_html/current/backend
+
+3. Check if files exist:
+   ls -la *.js
+
+4. Run the fix script:
+   node test-and-fix.js
+
+5. Restart backend server:
+   pm2 restart kockys-backend
+
+6. Check status:
+   pm2 status
+
+7. Test API:
+   curl -s http://72.167.227.205:5001/api/menu/brunch
+
+========================================
+WHAT THIS WILL DO:
+========================================
+
+- Switch to stagingkockys user
+- Navigate to backend directory
+- Add 9 brunch items to database
+- Test API endpoint
+- Restart backend server
+- Fix syncing between frontend and admin panel
+
+========================================
+EXPECTED RESULTS:
+========================================
+
+After running, check:
+- Admin Panel: http://72.167.227.205:4000/menu-management?type=BRUNCH
+- Frontend: http://72.167.227.205:3003/brunch
+- API: http://72.167.227.205:5001/api/menu/brunch
+
+========================================
+TROUBLESHOOTING:
+========================================
+
+If you get errors:
+1. Check if Node.js is installed: node -v
+2. Check if PM2 is running: pm2 status
+3. Check backend logs: pm2 logs kockys-backend
+4. Check file permissions: ls -la /home/stagingkockys/public_html/current/backend/
+
+========================================
+
+
+

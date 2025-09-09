@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200">
+  <!-- Red background circle -->
+  <circle cx="100" cy="100" r="80" fill="#DC2626"/>
+  
+  <!-- Stylized rooster silhouette -->
+  <path d="M 70 100 Q 70 70, 90 65 Q 100 55, 110 60 Q 120 50, 125 55 Q 130 60, 125 70 L 120 75 Q 130 80, 130 100 Q 130 120, 120 130 L 80 130 Q 70 120, 70 100" fill="#FBBF24"/>
+  
+  <!-- Eye -->
+  <circle cx="95" cy="85" r="3" fill="#000000"/>
+  
+  <!-- Beak -->
+  <path d="M 70 85 L 60 85 L 70 90 Z" fill="#F59E0B"/>
+  
+  <!-- Comb -->
+  <path d="M 100 65 Q 95 55, 100 50 Q 105 55, 110 50 Q 115 55, 110 60" fill="#EF4444"/>
+  
+  <!-- Text: Kocky's -->
+  <text x="200" y="90" font-family="Arial Black, sans-serif" font-size="48" font-weight="bold" fill="#DC2626">Kocky's</text>
+  
+  <!-- Subtitle -->
+  <text x="200" y="120" font-family="Arial, sans-serif" font-size="24" fill="#666666">Bar & Grill</text>
+  
+  <!-- Decorative line -->
+  <line x1="200" y1="130" x2="360" y2="130" stroke="#FCD34D" stroke-width="3"/>
+</svg>

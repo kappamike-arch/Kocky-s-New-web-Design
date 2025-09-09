@@ -1,0 +1,169 @@
+/* Service Page Styles - Consistent with Kocky's Brand Theme */
+.serviceContainer {
+  @apply min-h-screen bg-black text-white;
+}
+
+/* Hero Section */
+.heroSection {
+  @apply relative min-h-[70vh] bg-gradient-to-b from-black to-gray-900 overflow-hidden;
+}
+
+.heroOverlay {
+  @apply absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80;
+}
+
+.heroContent {
+  @apply relative z-10 container mx-auto px-4 py-20 text-center;
+}
+
+.heroTitle {
+  @apply text-5xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-red-600 to-red-400 bg-clip-text text-transparent;
+}
+
+.heroSubtitle {
+  @apply text-xl md:text-2xl text-gray-300 mb-8;
+}
+
+/* Section Styles */
+.section {
+  @apply py-16 bg-black;
+}
+
+.sectionAlt {
+  @apply py-16 bg-gray-900;
+}
+
+.sectionTitle {
+  @apply text-4xl font-bold text-center mb-4 text-white;
+}
+
+.sectionSubtitle {
+  @apply text-xl text-center text-gray-400 mb-12;
+}
+
+/* Cards */
+.card {
+  @apply bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-red-600 transition-all duration-300;
+}
+
+.cardHover {
+  @apply hover:bg-gray-800 hover:transform hover:scale-105;
+}
+
+/* Buttons */
+.primaryButton {
+  @apply bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300;
+}
+
+.secondaryButton {
+  @apply bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg border border-gray-700 transition-all duration-300;
+}
+
+.accentButton {
+  @apply bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 px-6 rounded-lg transition-all duration-300;
+}
+
+/* Forms */
+.formContainer {
+  @apply bg-gray-900 border border-gray-800 rounded-lg p-8;
+}
+
+.formInput {
+  @apply bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2 focus:border-red-600 focus:ring-2 focus:ring-red-600/20 transition-all duration-300;
+}
+
+.formLabel {
+  @apply text-gray-300 mb-2 block font-medium;
+}
+
+/* Badges */
+.badge {
+  @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.badgePrimary {
+  @apply bg-red-600/20 text-red-400 border border-red-600/30;
+}
+
+.badgeSecondary {
+  @apply bg-gray-800 text-gray-300 border border-gray-700;
+}
+
+.badgeAccent {
+  @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+}
+
+/* Features Grid */
+.featuresGrid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6;
+}
+
+.featureCard {
+  @apply bg-gray-900 border border-gray-800 rounded-lg p-6 text-center hover:border-red-600 transition-all duration-300;
+}
+
+.featureIcon {
+  @apply w-12 h-12 mx-auto mb-4 text-red-500;
+}
+
+.featureTitle {
+  @apply text-lg font-bold text-white mb-2;
+}
+
+.featureDescription {
+  @apply text-gray-400 text-sm;
+}
+
+/* Package Cards */
+.packageCard {
+  @apply bg-gray-900 border border-gray-800 rounded-lg p-8 relative hover:border-red-600 transition-all duration-300;
+}
+
+.packagePopular {
+  @apply border-red-600 bg-gradient-to-br from-gray-900 to-gray-800;
+}
+
+.packageBadge {
+  @apply absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-1 rounded-full text-sm font-bold;
+}
+
+.packageTitle {
+  @apply text-2xl font-bold text-white mb-2;
+}
+
+.packagePrice {
+  @apply text-3xl font-bold text-red-500 mb-4;
+}
+
+.packageFeature {
+  @apply flex items-center gap-2 text-gray-300 mb-2;
+}
+
+.packageFeatureIcon {
+  @apply text-green-500 w-5 h-5;
+}
+
+/* Consistent Colors */
+.textPrimary {
+  @apply text-red-500;
+}
+
+.textAccent {
+  @apply text-yellow-500;
+}
+
+.bgPrimary {
+  @apply bg-red-600;
+}
+
+.bgAccent {
+  @apply bg-yellow-500;
+}
+
+.borderPrimary {
+  @apply border-red-600;
+}
+
+.borderAccent {
+  @apply border-yellow-500;
+}

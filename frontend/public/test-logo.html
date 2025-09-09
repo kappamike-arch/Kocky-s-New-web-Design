@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logo Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .logo-test {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .info {
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Logo Test Page</h1>
+    
+    <div class="logo-test">
+        <h2>Main Logo (kockys-logo.png)</h2>
+        <img src="/kockys-logo.png?v=1756432883" alt="Kocky's Logo" style="max-height: 200px;">
+        <div class="info">
+            URL: /kockys-logo.png?v=1756432883<br>
+            Expected: Full-color logo with rooster mascot
+        </div>
+    </div>
+    
+    <div class="logo-test">
+        <h2>Fallback Logo (logo.png)</h2>
+        <img src="/logo.png?v=1756432883" alt="Fallback Logo" style="max-height: 200px;">
+        <div class="info">
+            URL: /logo.png?v=1756432883<br>
+            Expected: Same full-color logo
+        </div>
+    </div>
+    
+    <div class="logo-test">
+        <h2>Direct File Check</h2>
+        <p>If you see the one-color logo above, the issue is browser caching.</p>
+        <p>Try these steps:</p>
+        <ol>
+            <li>Press Cmd + Shift + R (hard refresh)</li>
+            <li>Open Developer Tools (F12) → Network tab → check "Disable cache"</li>
+            <li>Clear browser cache: Chrome Settings → Privacy → Clear browsing data</li>
+        </ol>
+    </div>
+</body>
+</html>
+

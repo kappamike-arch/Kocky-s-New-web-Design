@@ -1,0 +1,51 @@
+========================================
+ROOT ACCESS COMMANDS FOR BRUNCH FIX
+========================================
+
+If you have root access, run these commands:
+
+1. Make the script executable:
+   chmod +x /home/stagingkockys/public_html/current/backend/ROOT-ACCESS-FIX.sh
+
+2. Run the fix script:
+   /home/stagingkockys/public_html/current/backend/ROOT-ACCESS-FIX.sh
+
+OR run these commands manually:
+
+1. Switch to stagingkockys user:
+   su - stagingkockys
+
+2. Navigate to backend directory:
+   cd /home/stagingkockys/public_html/current/backend
+
+3. Run the fix script:
+   node test-and-fix.js
+
+4. Restart backend server:
+   pm2 restart kockys-backend
+
+5. Check status:
+   pm2 status
+
+========================================
+WHAT THIS WILL DO:
+========================================
+
+- Add 9 brunch items to database
+- Test API endpoint
+- Restart backend server
+- Fix syncing between frontend and admin panel
+
+========================================
+EXPECTED RESULTS:
+========================================
+
+After running, check:
+- Admin Panel: http://72.167.227.205:4000/menu-management?type=BRUNCH
+- Frontend: http://72.167.227.205:3003/brunch
+- API: http://72.167.227.205:5001/api/menu/brunch
+
+========================================
+
+
+

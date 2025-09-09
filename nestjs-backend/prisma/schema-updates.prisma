@@ -1,0 +1,195 @@
+// Add these models to your existing schema.prisma file
+
+model Quote {
+  id                String          @id @default(uuid())
+  quoteNumber       String          @unique
+  inquiryId         String?
+  inquiry           Inquiry?        @relation(fields: [inquiryId], references: [id])
+  customerId        String?
+  customer          Customer?       @relation(fields: [customerId], references: [id])
+  
+  // Quote Details
+  title             String
+  description       String?         @db.Text
+  eventDate         DateTime?
+  eventLocation     String?
+  guestCount        Int?
+  
+  // Items & Pricing
+  items             QuoteItem[]
+  packages          QuotePackage[]
+  laborItems        QuoteLaborItem[]
+  
+  // Totals
+  subtotal          Decimal         @db.Decimal(10, 2)
+  taxRate           Decimal         @default(0) @db.Decimal(5, 2)
+  taxAmount         Decimal         @default(0) @db.Decimal(10, 2)
+  discount          Decimal         @default(0) @db.Decimal(10, 2)
+  discountType      DiscountType    @default(FIXED)
+  total             Decimal         @db.Decimal(10, 2)
+  
+  // Status & Payment
+  status            QuoteStatus     @default(DRAFT)
+  sentAt            DateTime?
+  viewedAt          DateTime?
+  acceptedAt        DateTime?
+  rejectedAt        DateTime?
+  paidAt            DateTime?
+  
+  // Stripe
+  stripeCheckoutId  String?
+  stripePaymentLink String?
+  stripeInvoiceId   String?
+  
+  // Template
+  templateId        String?
+  template          QuoteTemplate?  @relation(fields: [templateId], references: [id])
+  
+  // Metadata
+  validUntil        DateTime?
+  notes             String?         @db.Text
+  internalNotes     String?         @db.Text
+  termsAndConditions String?        @db.Text
+  
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  createdBy         String?
+  
+  @@index([customerId])
+  @@index([inquiryId])
+  @@index([status])
+  @@index([quoteNumber])
+}
+
+model QuoteItem {
+  id          String    @id @default(uuid())
+  quoteId     String
+  quote       Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  
+  // Item Details
+  name        String
+  description String?
+  category    String?
+  
+  // Pricing
+  quantity    Int       @default(1)
+  unitPrice   Decimal   @db.Decimal(10, 2)
+  total       Decimal   @db.Decimal(10, 2)
+  
+  // Options
+  isOptional  Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([quoteId])
+}
+
+model QuotePackage {
+  id          String    @id @default(uuid())
+  quoteId     String
+  quote       Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  
+  // Package Details
+  name        String
+  description String?   @db.Text
+  
+  // Items included
+  items       Json      // Array of items included in package
+  
+  // Pricing
+  price       Decimal   @db.Decimal(10, 2)
+  
+  // Options
+  isOptional  Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([quoteId])
+}
+
+model QuoteLaborItem {
+  id          String    @id @default(uuid())
+  quoteId     String
+  quote       Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  
+  // Labor Details
+  description String
+  
+  // Time & Rate
+  hours       Decimal   @db.Decimal(5, 2)
+  rate        Decimal   @db.Decimal(10, 2)
+  total       Decimal   @db.Decimal(10, 2)
+  
+  // Staff assignment (optional)
+  staffName   String?
+  
+  // Options
+  isOptional  Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([quoteId])
+}
+
+model QuoteTemplate {
+  id                String   @id @default(uuid())
+  name              String
+  type              String   // FOOD_TRUCK, MOBILE_BAR, CATERING, etc.
+  subject           String
+  
+  // Template Content
+  headerContent     Json?    // Rich text content
+  bodyContent       Json?    // Rich text content
+  footerContent     Json?    // Rich text content
+  
+  // Default Items/Packages
+  defaultItems      Json?    // Default items to include
+  defaultPackages   Json?    // Default packages
+  defaultLabor      Json?    // Default labor items
+  
+  // Branding
+  logo              Json?    // Logo image data
+  primaryColor      String   @default("#FF6B35")
+  secondaryColor    String   @default("#004E64")
+  
+  // Settings
+  includeTerms      Boolean  @default(true)
+  includePaymentLink Boolean @default(true)
+  validityDays      Int      @default(30)
+  
+  isActive          Boolean  @default(true)
+  quotes            Quote[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// Enums
+enum QuoteStatus {
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+enum DiscountType {
+  FIXED
+  PERCENTAGE
+}
+
+// Update existing Inquiry model relation
+model Inquiry {
+  // ... existing fields ...
+  quotes     Quote[]
+  // ... rest of the model ...
+}

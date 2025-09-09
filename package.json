@@ -1,0 +1,29 @@
+{
+  "name": "kockys-bar-grill",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:cms\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd nestjs-backend && npm run start:dev",
+    "dev:cms": "cd keystone-cms && npm run dev",
+    "build": "npm run build:frontend && npm run build:backend && npm run build:cms",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd nestjs-backend && npm run build",
+    "build:cms": "cd keystone-cms && npm run build",
+    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\" \"npm run start:cms\"",
+    "start:frontend": "cd frontend && npm run start",
+    "start:backend": "cd nestjs-backend && npm run start:prod",
+    "start:cms": "cd keystone-cms && npm run start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "sharp": "^0.34.3"
+  }
+}

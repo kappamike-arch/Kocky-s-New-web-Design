@@ -1,0 +1,444 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Authentication & User Management
+model User {
+  id                String     @id @default(uuid())
+  email             String     @unique
+  password          String
+  firstName         String?
+  lastName          String?
+  role              UserRole   @default(CUSTOMER)
+  isActive          Boolean    @default(true)
+  emailVerified     Boolean    @default(false)
+  refreshToken      String?    @db.Text
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  // Relations
+  customers         Customer[]
+  inquiries         Inquiry[]
+  quotes            Quote[]
+  orders            Order[]
+  reservations      Reservation[]
+  analytics         AnalyticsEvent[]
+
+  @@index([email])
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  CUSTOMER
+}
+
+// Customer Management
+model Customer {
+  id                String     @id @default(uuid())
+  userId            String?
+  user              User?      @relation(fields: [userId], references: [id])
+  email             String     @unique
+  firstName         String
+  lastName          String
+  phone             String?
+  company           String?
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  country           String?
+  notes             String?    @db.Text
+  tags              String[]
+  totalSpent        Float      @default(0)
+  lastOrderDate     DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  // Relations
+  inquiries         Inquiry[]
+  quotes            Quote[]
+  orders            Order[]
+  reservations      Reservation[]
+
+  @@index([email])
+  @@map("customers")
+}
+
+// Inquiries Management
+model Inquiry {
+  id                String         @id @default(uuid())
+  customerId        String?
+  customer          Customer?      @relation(fields: [customerId], references: [id])
+  userId            String?
+  user              User?          @relation(fields: [userId], references: [id])
+  name              String
+  email             String
+  phone             String?
+  subject           String
+  message           String         @db.Text
+  status            InquiryStatus  @default(NEW)
+  priority          Priority       @default(MEDIUM)
+  assignedTo        String?
+  notes             String?        @db.Text
+  source            String?        // website, phone, email, etc.
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  resolvedAt        DateTime?
+
+  // Relations
+  quotes            Quote[]
+
+  @@index([status])
+  @@index([email])
+  @@map("inquiries")
+}
+
+enum InquiryStatus {
+  NEW
+  IN_PROGRESS
+  WAITING_RESPONSE
+  RESOLVED
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// Quotes Management
+model Quote {
+  id                String      @id @default(uuid())
+  quoteNumber       String      @unique @default(cuid())
+  customerId        String?
+  customer          Customer?   @relation(fields: [customerId], references: [id])
+  userId            String?
+  user              User?       @relation(fields: [userId], references: [id])
+  inquiryId         String?
+  inquiry           Inquiry?    @relation(fields: [inquiryId], references: [id])
+  status            QuoteStatus @default(DRAFT)
+  validUntil        DateTime
+  subtotal          Float
+  tax               Float       @default(0)
+  discount          Float       @default(0)
+  total             Float
+  notes             String?     @db.Text
+  terms             String?     @db.Text
+  stripePaymentLink String?
+  emailSent         Boolean     @default(false)
+  emailSentAt       DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  acceptedAt        DateTime?
+
+  // Relations
+  items             QuoteItem[]
+
+  @@index([quoteNumber])
+  @@index([status])
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id                String   @id @default(uuid())
+  quoteId           String
+  quote             Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  description       String
+  quantity          Int
+  unitPrice         Float
+  total             Float
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("quote_items")
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+// Menu Management
+model MenuItem {
+  id                String      @id @default(uuid())
+  name              String
+  description       String?     @db.Text
+  category          String
+  subcategory       String?
+  price             Float
+  image             String?
+  featured          Boolean     @default(false)
+  available         Boolean     @default(true)
+  tags              String[]
+  allergens         String[]
+  nutritionInfo     Json?
+  sortOrder         Int         @default(0)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Relations
+  orderItems        OrderItem[]
+
+  @@index([category])
+  @@index([available])
+  @@map("menu_items")
+}
+
+// Pages Management (CMS)
+model Page {
+  id                String      @id @default(uuid())
+  title             String
+  slug              String      @unique
+  content           String      @db.Text
+  metaTitle         String?
+  metaDescription   String?
+  metaKeywords      String[]
+  featuredImage     String?
+  status            PageStatus  @default(DRAFT)
+  template          String      @default("default")
+  sortOrder         Int         @default(0)
+  publishedAt       DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([slug])
+  @@index([status])
+  @@map("pages")
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// Email Lists Management
+model EmailSubscriber {
+  id                String           @id @default(uuid())
+  email             String           @unique
+  firstName         String?
+  lastName          String?
+  status            SubscriberStatus @default(ACTIVE)
+  source            String?          // website, import, manual, etc.
+  tags              String[]
+  subscribedAt      DateTime         @default(now())
+  unsubscribedAt    DateTime?
+  bounced           Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  campaigns         CampaignRecipient[]
+
+  @@index([email])
+  @@index([status])
+  @@map("email_subscribers")
+}
+
+enum SubscriberStatus {
+  ACTIVE
+  UNSUBSCRIBED
+  BOUNCED
+  PENDING
+}
+
+model EmailCampaign {
+  id                String             @id @default(uuid())
+  name              String
+  subject           String
+  content           String             @db.Text
+  fromName          String
+  fromEmail         String
+  replyTo           String?
+  status            CampaignStatus     @default(DRAFT)
+  scheduledAt       DateTime?
+  sentAt            DateTime?
+  opens             Int                @default(0)
+  clicks            Int                @default(0)
+  unsubscribes      Int                @default(0)
+  bounces           Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  // Relations
+  recipients        CampaignRecipient[]
+
+  @@index([status])
+  @@map("email_campaigns")
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+}
+
+model CampaignRecipient {
+  id                String          @id @default(uuid())
+  campaignId        String
+  campaign          EmailCampaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  subscriberId      String
+  subscriber        EmailSubscriber @relation(fields: [subscriberId], references: [id])
+  sent              Boolean         @default(false)
+  opened            Boolean         @default(false)
+  clicked           Boolean         @default(false)
+  unsubscribed      Boolean         @default(false)
+  bounced           Boolean         @default(false)
+  sentAt            DateTime?
+  openedAt          DateTime?
+  clickedAt         DateTime?
+
+  @@unique([campaignId, subscriberId])
+  @@map("campaign_recipients")
+}
+
+// Orders Management
+model Order {
+  id                String      @id @default(uuid())
+  orderNumber       String      @unique @default(cuid())
+  customerId        String?
+  customer          Customer?   @relation(fields: [customerId], references: [id])
+  userId            String?
+  user              User?       @relation(fields: [userId], references: [id])
+  status            OrderStatus @default(PENDING)
+  type              OrderType   @default(DINE_IN)
+  subtotal          Float
+  tax               Float
+  tip               Float       @default(0)
+  total             Float
+  notes             String?     @db.Text
+  stripePaymentId   String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Relations
+  items             OrderItem[]
+
+  @@index([orderNumber])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                String     @id @default(uuid())
+  orderId           String
+  order             Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId        String
+  menuItem          MenuItem   @relation(fields: [menuItemId], references: [id])
+  quantity          Int
+  unitPrice         Float
+  total             Float
+  specialRequests   String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@map("order_items")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEOUT
+  DELIVERY
+  CATERING
+}
+
+// Reservations Management
+model Reservation {
+  id                String             @id @default(uuid())
+  confirmationCode  String             @unique @default(cuid())
+  customerId        String?
+  customer          Customer?          @relation(fields: [customerId], references: [id])
+  userId            String?
+  user              User?              @relation(fields: [userId], references: [id])
+  guestName         String
+  guestEmail        String
+  guestPhone        String?
+  date              DateTime
+  partySize         Int
+  status            ReservationStatus  @default(PENDING)
+  specialRequests   String?            @db.Text
+  tableNumber       String?
+  notes             String?            @db.Text
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([date])
+  @@index([status])
+  @@index([confirmationCode])
+  @@map("reservations")
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  SEATED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// Analytics
+model AnalyticsEvent {
+  id                String    @id @default(uuid())
+  userId            String?
+  user              User?     @relation(fields: [userId], references: [id])
+  sessionId         String
+  eventType         String    // page_view, click, conversion, etc.
+  eventName         String
+  eventData         Json?
+  page              String?
+  referrer          String?
+  userAgent         String?
+  ipAddress         String?
+  country           String?
+  city              String?
+  createdAt         DateTime  @default(now())
+
+  @@index([sessionId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
+// System Settings
+model Setting {
+  id                String    @id @default(uuid())
+  key               String    @unique
+  value             String    @db.Text
+  type              String    // string, number, boolean, json
+  description       String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("settings")
+}

@@ -1,0 +1,38 @@
+========================================
+KOCKY'S BRUNCH SYNC FIX - EXECUTE THESE COMMANDS
+========================================
+
+STEP 1: Navigate to the backend directory
+cd /home/stagingkockys/public_html/current/backend
+
+STEP 2: Run the quick fix script
+node quick-fix.js
+
+STEP 3: Restart the backend server
+pm2 restart kockys-backend
+
+STEP 4: Wait 5 seconds for server to restart
+sleep 5
+
+STEP 5: Test the API endpoint
+curl -s http://72.167.227.205:5001/api/menu/brunch
+
+STEP 6: Check the results
+- Admin Panel: http://72.167.227.205:4000/menu-management?type=BRUNCH
+- Frontend: http://72.167.227.205:3003/brunch
+
+========================================
+EXPECTED RESULTS:
+========================================
+
+After running these commands, you should see:
+- 9 brunch items added to the database
+- Admin panel showing all brunch items
+- Frontend loading items from API instead of hardcoded data
+
+If you see any errors, please share the error message.
+
+========================================
+
+
+

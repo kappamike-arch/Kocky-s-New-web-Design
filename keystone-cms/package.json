@@ -1,0 +1,30 @@
+{
+  "name": "keystone-cms",
+  "version": "1.0.0",
+  "description": "KeystoneJS CMS for Kocky's Bar & Grill",
+  "main": "keystone.ts",
+  "scripts": {
+    "dev": "keystone dev",
+    "start": "keystone start",
+    "build": "keystone build",
+    "postinstall": "keystone postinstall"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@keystone-6/auth": "^8.1.0",
+    "@keystone-6/cloudinary": "^8.0.0",
+    "@keystone-6/core": "^6.5.1",
+    "@keystone-6/fields-document": "^9.1.1",
+    "@keystone-ui/button": "^7.0.2",
+    "@keystone-ui/core": "^5.0.2",
+    "@keystone-ui/fields": "^7.2.0",
+    "@keystone-ui/icons": "^6.0.2",
+    "@prisma/client": "^6.15.0",
+    "@types/node": "^24.3.0",
+    "dotenv": "^17.2.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}

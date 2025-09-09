@@ -1,0 +1,117 @@
+{
+  "branding": {
+    "title": "Kocky's Bar & Grill Admin",
+    "logo": "/logo.png",
+    "favicon": "/favicon.ico"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "label": "Content Management",
+        "items": [
+          { "list": "MenuItem", "label": "Menu Items", "icon": "🍽️" },
+          { "list": "Page", "label": "Pages", "icon": "📄" },
+          { "list": "ThemeSettings", "label": "Theme Settings", "icon": "🎨" }
+        ]
+      },
+      {
+        "label": "Customer Relations",
+        "items": [
+          { "list": "Customer", "label": "Customers", "icon": "👥" },
+          { "list": "Inquiry", "label": "Inquiries", "icon": "💬" },
+          { "list": "QuoteTemplate", "label": "Quote Templates", "icon": "📋" }
+        ]
+      },
+      {
+        "label": "Marketing",
+        "items": [
+          { "list": "EmailSubscriber", "label": "Email Lists", "icon": "📧" }
+        ]
+      },
+      {
+        "label": "Analytics",
+        "items": [
+          { "list": "AnalyticsSummary", "label": "Dashboard", "icon": "📊" }
+        ]
+      },
+      {
+        "label": "System",
+        "items": [
+          { "list": "User", "label": "Admin Users", "icon": "🔐" }
+        ]
+      }
+    ]
+  },
+  "dashboard": {
+    "widgets": [
+      {
+        "type": "stats",
+        "title": "Today's Overview",
+        "stats": [
+          { "label": "Total Inquiries", "value": "inquiries.new", "color": "blue" },
+          { "label": "Active Menu Items", "value": "menuItems.available", "color": "green" },
+          { "label": "Email Subscribers", "value": "emailList.active", "color": "purple" },
+          { "label": "Page Views", "value": "analytics.pageViews", "color": "orange" }
+        ]
+      },
+      {
+        "type": "recent",
+        "title": "Recent Inquiries",
+        "list": "Inquiry",
+        "limit": 5
+      },
+      {
+        "type": "chart",
+        "title": "Weekly Traffic",
+        "data": "analytics.weekly"
+      }
+    ]
+  },
+  "features": {
+    "csvImport": {
+      "enabled": true,
+      "lists": ["EmailSubscriber", "Customer"]
+    },
+    "bulkActions": {
+      "enabled": true,
+      "actions": [
+        "delete",
+        "updateStatus",
+        "addTags"
+      ]
+    },
+    "search": {
+      "enabled": true,
+      "placeholder": "Search everything..."
+    },
+    "darkMode": {
+      "enabled": true,
+      "default": false
+    }
+  },
+  "permissions": {
+    "roles": {
+      "ADMIN": {
+        "description": "Full access to all features",
+        "permissions": ["*"]
+      },
+      "STAFF": {
+        "description": "Can manage content and customers",
+        "permissions": [
+          "MenuItem:*",
+          "Page:*",
+          "Customer:read",
+          "Customer:update",
+          "Inquiry:*",
+          "EmailSubscriber:read"
+        ]
+      },
+      "VIEWER": {
+        "description": "Read-only access",
+        "permissions": [
+          "*:read"
+        ]
+      }
+    }
+  }
+}

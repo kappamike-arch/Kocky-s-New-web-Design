@@ -1,0 +1,260 @@
+// Additional models and fields needed for KeystoneJS CMS
+// Add these to your existing nestjs-backend/prisma/schema.prisma
+
+model Page {
+  id               String    @id @default(uuid())
+  title            String
+  slug             String    @unique
+  content          Json?     // Document field stored as JSON
+  backgroundType   String?
+  backgroundColor  String?
+  backgroundImage  Json?     // Image field data
+  backgroundVideo  Json?     // File field data
+  metaTitle        String?
+  metaDescription  String?
+  isPublished      Boolean   @default(true)
+  publishedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model ThemeSettings {
+  id              String   @id @default(uuid())
+  name            String
+  isActive        Boolean  @default(false)
+  primaryColor    String   @default("#FF6B35")
+  secondaryColor  String?  @default("#004E64")
+  accentColor     String?  @default("#25A18E")
+  backgroundColor String?  @default("#FFFFFF")
+  surfaceColor    String?  @default("#F8F9FA")
+  textPrimary     String?  @default("#212529")
+  textSecondary   String?  @default("#6C757D")
+  textOnPrimary   String?  @default("#FFFFFF")
+  successColor    String?  @default("#28A745")
+  errorColor      String?  @default("#DC3545")
+  warningColor    String?  @default("#FFC107")
+  infoColor       String?  @default("#17A2B8")
+  fontFamily      String?  @default("Poppins")
+  fontSize        String?  @default("16px")
+  borderRadius    String?  @default("8px")
+  logo            Json?    // Image field
+  darkLogo        Json?    // Image field
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model QuoteTemplate {
+  id                 String   @id @default(uuid())
+  name               String
+  type               String
+  subject            String
+  header             Json?    // Document field
+  body               Json?    // Document field
+  footer             Json?    // Document field
+  logo               Json?    // Image field
+  termsAndConditions Json?    // Document field
+  validityDays       Int      @default(30)
+  includePaymentLink Boolean  @default(true)
+  variables          Json?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model EmailSubscriber {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  firstName        String?
+  lastName         String?
+  status           SubscriberStatus @default(ACTIVE)
+  tags             String[]
+  source           String?
+  subscribedAt     DateTime  @default(now())
+  unsubscribedAt   DateTime?
+  totalEmailsSent  Int       @default(0)
+  totalOpens       Int       @default(0)
+  totalClicks      Int       @default(0)
+  importBatch      String?
+  campaigns        CampaignRecipient[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model EmailCampaign {
+  id           String             @id @default(uuid())
+  name         String
+  subject      String
+  content      String             @db.Text
+  fromName     String
+  fromEmail    String
+  replyTo      String?
+  status       CampaignStatus     @default(DRAFT)
+  scheduledAt  DateTime?
+  sentAt       DateTime?
+  recipients   CampaignRecipient[]
+  opens        Int                @default(0)
+  clicks       Int                @default(0)
+  unsubscribes Int                @default(0)
+  bounces      Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
+
+model CampaignRecipient {
+  id           String          @id @default(uuid())
+  campaignId   String
+  subscriberId String
+  campaign     EmailCampaign   @relation(fields: [campaignId], references: [id])
+  subscriber   EmailSubscriber @relation(fields: [subscriberId], references: [id])
+  sent         Boolean         @default(false)
+  sentAt       DateTime?
+  opened       Boolean         @default(false)
+  openedAt     DateTime?
+  clicked      Boolean         @default(false)
+  clickedAt    DateTime?
+  bounced      Boolean         @default(false)
+  unsubscribed Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  
+  @@unique([campaignId, subscriberId])
+}
+
+model AnalyticsSummary {
+  id                     String   @id @default(uuid())
+  date                   DateTime @unique
+  totalVisitors          Int      @default(0)
+  pageViews              Int      @default(0)
+  averageSessionDuration Decimal  @db.Decimal(10, 2)
+  bounceRate             Decimal  @db.Decimal(5, 2)
+  topPages               Json?
+  topReferrers           Json?
+  deviceBreakdown        Json?
+  conversions            Json?
+  revenue                Decimal  @db.Decimal(10, 2)
+  orders                 Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model Reservation {
+  id            String   @id @default(uuid())
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  partySize     Int
+  date          DateTime
+  time          String
+  specialRequests String? @db.Text
+  status        ReservationStatus @default(PENDING)
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  orderNumber String      @unique
+  customerId  String?
+  customer    Customer?   @relation(fields: [customerId], references: [id])
+  items       OrderItem[]
+  subtotal    Decimal     @db.Decimal(10, 2)
+  tax         Decimal     @db.Decimal(10, 2)
+  total       Decimal     @db.Decimal(10, 2)
+  status      OrderStatus @default(PENDING)
+  paymentMethod String?
+  paymentStatus String?
+  notes       String?     @db.Text
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id])
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity   Int
+  price      Decimal  @db.Decimal(10, 2)
+  total      Decimal  @db.Decimal(10, 2)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Update existing MenuItem model to include image field as JSON
+model MenuItem {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?  @db.Text
+  category        String
+  price           Decimal  @db.Decimal(10, 2)
+  image           Json?    // Store image data as JSON for KeystoneJS
+  isAvailable     Boolean  @default(true)
+  isVegetarian    Boolean  @default(false)
+  isGlutenFree    Boolean  @default(false)
+  spicyLevel      String?
+  calories        Int?
+  allergens       String?  @db.Text
+  preparationTime Int?
+  featured        Boolean  @default(false)
+  displayOrder    Int      @default(0)
+  orderItems      OrderItem[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Enums needed
+enum SubscriberStatus {
+  ACTIVE
+  UNSUBSCRIBED
+  BOUNCED
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+// Update Customer model to include reservations and orders relations
+model Customer {
+  id            String    @id @default(uuid())
+  firstName     String
+  lastName      String
+  email         String    @unique
+  phone         String?
+  company       String?
+  address       String?   @db.Text
+  notes         String?   @db.Text
+  vipStatus     Boolean   @default(false)
+  totalSpent    Decimal   @default(0) @db.Decimal(10, 2)
+  lastOrderDate DateTime?
+  tags          String[]
+  inquiries     Inquiry[]
+  quotes        Quote[]
+  reservations  Reservation[]
+  orders        Order[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

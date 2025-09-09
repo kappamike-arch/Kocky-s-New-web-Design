@@ -1,0 +1,6 @@
+<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="100" fill="#2d5016"/>
+  <text x="100" y="35" font-family="Arial, sans-serif" font-size="16" fill="#ffffff" text-anchor="middle">CATERING</text>
+  <text x="100" y="55" font-family="Arial, sans-serif" font-size="12" fill="#ffd700" text-anchor="middle">SERVICES</text>
+  <text x="100" y="75" font-family="Arial, sans-serif" font-size="10" fill="#ffffff" text-anchor="middle">Events & Parties</text>
+</svg>
