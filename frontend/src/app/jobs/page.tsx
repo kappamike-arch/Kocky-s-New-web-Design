@@ -13,8 +13,9 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useQuery } from '@tanstack/react-query';
+import { getAssetUrl } from '@/lib/asset-config';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://72.167.227.205:5001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://staging.kockys.com/api';
 
 interface JobPageSettings {
   id: string;
@@ -178,7 +179,7 @@ export default function JobsPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/40 z-10" />
           {settings?.heroImage ? (
             <Image
-              src={`http://72.167.227.205:5001${settings.heroImage}`}
+              src={getAssetUrl(settings.heroImage)}
               alt="Join our team"
               fill
               className="object-cover"

@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-1.1.x"]
 }
 
@@ -360,18 +360,18 @@ model EmailLog {
 }
 
 model EmailAccount {
-  id           String   @id @default(cuid())
-  accountType  String   // 'quotes', 'support', 'general'
+  id           String    @id @default(cuid())
+  accountType  String
   email        String
   displayName  String
-  provider     String   // 'microsoft365', 'godaddy'
-  accessToken  String?  // Encrypted
-  refreshToken String?  // Encrypted
+  provider     String
+  accessToken  String?
+  refreshToken String?
   expiresAt    DateTime?
-  isActive     Boolean  @default(true)
+  isActive     Boolean   @default(true)
   lastRefresh  DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@unique([accountType, email])
 }
@@ -424,20 +424,20 @@ model Settings {
 }
 
 model HeroSettings {
-  id               String   @id @default(cuid())
-  pageId           String   @unique
-  pageName         String
-  pageSlug         String
-  useLogo          Boolean  @default(true)
-  logoUrl          String?
-  backgroundImage  String?
-  backgroundVideo  String?
-  mediaPreference  String?  @default("auto") // "image", "video", "auto"
-  title            String?
-  subtitle         String?
-  description      String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String   @id @default(cuid())
+  pageId          String   @unique
+  pageName        String
+  pageSlug        String
+  useLogo         Boolean  @default(true)
+  logoUrl         String?
+  title           String?
+  subtitle        String?
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  backgroundImage String?
+  backgroundVideo String?
+  mediaPreference String?  @default("auto")
 }
 
 model ServiceSettings {
@@ -542,19 +542,19 @@ model GalleryImage {
 }
 
 model JobApplication {
-  id           String              @id @default(cuid())
-  fullName     String
-  email        String
-  phone        String
-  position     JobPosition
-  resumeUrl    String?
-  coverLetter  String?
-  status       JobApplicationStatus @default(PENDING)
-  reviewedBy   String?
-  reviewedAt   DateTime?
-  notes        String?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  id          String               @id @default(cuid())
+  fullName    String
+  email       String
+  phone       String
+  position    JobPosition
+  resumeUrl   String?
+  coverLetter String?
+  status      JobApplicationStatus @default(PENDING)
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  notes       String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
   @@index([status])
   @@index([position])
@@ -562,14 +562,133 @@ model JobApplication {
 }
 
 model JobPageSettings {
-  id          String   @id @default(cuid())
-  heroImage   String?
-  heroTitle   String   @default("Join Our Team")
-  heroSubtitle String  @default("Be part of the Kocky's family - where great food meets great people")
-  introText   String   @default("We're always looking for passionate individuals to join our team")
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  heroImage    String?
+  heroTitle    String   @default("Join Our Team")
+  heroSubtitle String   @default("Be part of the Kocky's family - where great food meets great people")
+  introText    String   @default("We're always looking for passionate individuals to join our team")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model InboxEmail {
+  id               String    @id @default(cuid())
+  messageId        String
+  subject          String
+  sender           String
+  senderEmail      String
+  body             String
+  bodyPreview      String?
+  receivedDateTime DateTime
+  isRead           Boolean   @default(false)
+  hasAttachments   Boolean   @default(false)
+  attachments      Json?
+  mailboxEmail     String
+  conversationId   String?
+  importance       String    @default("normal")
+  categories       Json?
+  autoReplied      Boolean   @default(false)
+  autoReplyAt      DateTime?
+  lastSync         DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([messageId, mailboxEmail])
+  @@index([mailboxEmail, receivedDateTime])
+  @@index([senderEmail])
+  @@index([isRead])
+}
+
+model SentEmail {
+  id           String   @id @default(cuid())
+  fromEmail    String
+  toEmails     Json
+  ccEmails     Json?
+  bccEmails    Json?
+  subject      String
+  body         String
+  sentAt       DateTime
+  method       String
+  status       String
+  messageId    String?
+  errorMessage String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([fromEmail, sentAt])
+  @@index([status])
+}
+
+model EmailContact {
+  id             String       @id @default(cuid())
+  email          String       @unique
+  firstName      String?
+  lastName       String?
+  phone          String?
+  tags           Json         @default("[]")
+  consentEmail   Boolean      @default(true)
+  consentSms     Boolean      @default(false)
+  unsubscribedAt DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  events         EmailEvent[]
+
+  @@index([email])
+  @@index([consentEmail])
+  @@index([unsubscribedAt])
+}
+
+model EmailMarketingTemplate {
+  id        String          @id @default(cuid())
+  name      String
+  slug      String          @unique
+  mjml      String
+  html      String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  campaigns EmailCampaign[]
+
+  @@index([slug])
+}
+
+model EmailCampaign {
+  id          String                  @id @default(cuid())
+  name        String
+  subject     String
+  fromName    String?
+  fromEmail   String
+  templateId  String?
+  html        String?
+  status      CampaignStatus          @default(DRAFT)
+  segmentTags Json                    @default("[]")
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  template    EmailMarketingTemplate? @relation(fields: [templateId], references: [id])
+  events      EmailEvent[]
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([sentAt])
+}
+
+model EmailEvent {
+  id         String         @id @default(cuid())
+  contactId  String
+  campaignId String?
+  type       EmailEventType
+  meta       Json?
+  createdAt  DateTime       @default(now())
+  campaign   EmailCampaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact    EmailContact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([contactId])
+  @@index([campaignId])
+  @@index([type])
+  @@index([createdAt])
 }
 
 enum UserRole {
@@ -727,52 +846,49 @@ enum JobApplicationStatus {
   WITHDRAWN
 }
 
-
-model InboxEmail {
-  id               String   @id @default(cuid())
-  messageId        String   // Microsoft Graph message ID
-  subject          String
-  sender           String
-  senderEmail      String
-  body             String   
-  bodyPreview      String?
-  receivedDateTime DateTime
-  isRead           Boolean  @default(false)
-  hasAttachments   Boolean  @default(false)
-  attachments      Json?
-  mailboxEmail     String   // Which mailbox this email belongs to
-  conversationId   String?
-  importance       String   @default("normal")
-  categories       Json?
-  autoReplied      Boolean  @default(false)
-  autoReplyAt      DateTime?
-  lastSync         DateTime @default(now())
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@unique([messageId, mailboxEmail])
-  @@index([mailboxEmail, receivedDateTime])
-  @@index([senderEmail])
-  @@index([isRead])
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
 }
 
-model SentEmail {
-  id           String   @id @default(cuid())
-  fromEmail    String
-  toEmails     Json     // Array of email addresses
-  ccEmails     Json?    // Array of CC email addresses
-  bccEmails    Json?    // Array of BCC email addresses
-  subject      String
-  body         String   
-  sentAt       DateTime
-  method       String   // "GRAPH_API", "SMTP", "SENDGRID"
-  status       String   // "SENT", "FAILED", "PENDING"
-  messageId    String?  // Graph API message ID
-  errorMessage String?
-  metadata     Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+enum EmailEventType {
+  SENT
+  OPEN
+  CLICK
+  BOUNCE
+  COMPLAINT
+  UNSUBSCRIBE
+}
 
-  @@index([fromEmail, sentAt])
-  @@index([status])
+enum RSVPStatus {
+  CONFIRMED
+  CANCELLED
+  WAITLIST
+}
+
+model Event {
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  description   String?
+  startAt       DateTime
+  endAt         DateTime?
+  venueName     String?
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  state         String?
+  zip           String?
+  heroImageUrl  String?
+  videoUrl      String?
+  isPublished   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([slug])
+  @@index([isPublished])
+  @@index([startAt])
 }

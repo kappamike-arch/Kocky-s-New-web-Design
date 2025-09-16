@@ -15,7 +15,7 @@ import {
   Terminal
 } from 'lucide-react';
 
-const API_URL = 'http://72.167.227.205:5001';
+const API_URL = 'https://staging.kockys.com/api';
 
 export default function BackendStatusPage() {
   const [status, setStatus] = useState<any>(null);

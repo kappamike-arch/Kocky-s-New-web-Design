@@ -89,16 +89,70 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies AppPageConfig<"/dashboard">
 }
 
+// Validate ../../src/app/email-studio/[templateId]/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/email-studio/[templateId]/page.js")
+  handler satisfies AppPageConfig<"/email-studio/[templateId]">
+}
+
+// Validate ../../src/app/email-studio/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/email-studio/page.js")
+  handler satisfies AppPageConfig<"/email-studio">
+}
+
 // Validate ../../src/app/email-templates/[id]/edit/page.tsx
 {
   const handler = {} as typeof import("../../src/app/email-templates/[id]/edit/page.js")
   handler satisfies AppPageConfig<"/email-templates/[id]/edit">
 }
 
+// Validate ../../src/app/email-templates/new/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/email-templates/new/page.js")
+  handler satisfies AppPageConfig<"/email-templates/new">
+}
+
 // Validate ../../src/app/email-templates/page.tsx
 {
   const handler = {} as typeof import("../../src/app/email-templates/page.js")
   handler satisfies AppPageConfig<"/email-templates">
+}
+
+// Validate ../../src/app/email/campaigns/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/email/campaigns/page.js")
+  handler satisfies AppPageConfig<"/email/campaigns">
+}
+
+// Validate ../../src/app/email/contacts/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/email/contacts/page.js")
+  handler satisfies AppPageConfig<"/email/contacts">
+}
+
+// Validate ../../src/app/email/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/email/page.js")
+  handler satisfies AppPageConfig<"/email">
+}
+
+// Validate ../../src/app/events/[id]/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/events/[id]/page.js")
+  handler satisfies AppPageConfig<"/events/[id]">
+}
+
+// Validate ../../src/app/events/new/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/events/new/page.js")
+  handler satisfies AppPageConfig<"/events/new">
+}
+
+// Validate ../../src/app/events/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/events/page.js")
+  handler satisfies AppPageConfig<"/events">
 }
 
 // Validate ../../src/app/food-truck/page.tsx
@@ -185,6 +239,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies AppPageConfig<"/quote-config">
 }
 
+// Validate ../../src/app/quotes/[id]/edit/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/quotes/[id]/edit/page.js")
+  handler satisfies AppPageConfig<"/quotes/[id]/edit">
+}
+
 // Validate ../../src/app/quotes/new/page.tsx
 {
   const handler = {} as typeof import("../../src/app/quotes/new/page.js")
@@ -219,6 +279,30 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   const handler = {} as typeof import("../../src/app/users/page.js")
   handler satisfies AppPageConfig<"/users">
+}
+
+// Validate ../../src/app/api/auth/log/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/auth/log/route.js")
+  handler satisfies RouteHandlerConfig<"/api/auth/log">
+}
+
+// Validate ../../src/app/api/auth/session/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/auth/session/route.js")
+  handler satisfies RouteHandlerConfig<"/api/auth/session">
+}
+
+// Validate ../../src/app/api/email/send/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/email/send/route.js")
+  handler satisfies RouteHandlerConfig<"/api/email/send">
+}
+
+// Validate ../../src/app/api/email/templates/[templateId]/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/email/templates/[templateId]/route.js")
+  handler satisfies RouteHandlerConfig<"/api/email/templates/[templateId]">
 }
 
 // Validate ../../src/app/api/upload-media/route.ts

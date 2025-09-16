@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-const API_URL = 'http://72.167.227.205:5001/api';
+const API_URL = '/api';
 
 export default function QuoteConfigPage() {
   const [activeTab, setActiveTab] = useState('packages');

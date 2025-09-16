@@ -41,6 +41,9 @@ const defaultSettings: Record<string, Omit<HeroSettings, 'id'>> = {
     pageSlug: '/happy-hour',
     useLogo: true,
     logoUrl: '/kockys-logo.png?v=1756432883',
+    backgroundImage: '/images/happy-hour-hero.jpg',
+    backgroundVideo: '/videos/happy-hour-hero.mp4',
+    mediaPreference: 'auto',
     title: 'Happy Hour Specials',
     subtitle: 'Daily 3PM - 6PM',
     description: 'Join us for amazing drink specials and appetizer deals'
@@ -50,6 +53,9 @@ const defaultSettings: Record<string, Omit<HeroSettings, 'id'>> = {
     pageSlug: '/brunch',
     useLogo: true,
     logoUrl: '/kockys-logo.png?v=1756432883',
+    backgroundImage: '/images/brunch-hero.jpg',
+    backgroundVideo: '/videos/brunch-hero.mp4',
+    mediaPreference: 'auto',
     title: 'Weekend Brunch',
     subtitle: 'Saturday & Sunday',
     description: 'Join us from 10am - 3pm for the best brunch in town'

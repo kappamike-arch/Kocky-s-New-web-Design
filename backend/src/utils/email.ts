@@ -3,8 +3,8 @@ import sgMail from '@sendgrid/mail';
 import { logger } from './logger';
 import { emailService, EmailAccount } from '../services/emailService';
 
-// Initialize SendGrid if API key is provided
-if (process.env.SENDGRID_API_KEY) {
+// Initialize SendGrid if API key is provided and valid
+if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.your-sendgrid-api-key-here') {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 

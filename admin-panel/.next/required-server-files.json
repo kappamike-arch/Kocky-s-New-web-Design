@@ -2,7 +2,7 @@
   "version": 1,
   "config": {
     "env": {
-      "NEXT_PUBLIC_API_URL": "http://72.167.227.205:5001/api",
+      "NEXT_PUBLIC_API_URL": "https://staging.kockys.com/api",
       "NEXT_PUBLIC_ADMIN_SECRET": "admin-secret-key-change-this"
     },
     "webpack": null,
@@ -16,7 +16,7 @@
     "typedRoutes": false,
     "distDir": ".next",
     "cleanDistDir": true,
-    "assetPrefix": "",
+    "assetPrefix": "/admin",
     "cacheMaxMemorySize": 52428800,
     "configOrigin": "next.config.js",
     "useFileSystemPublicRoutes": true,
@@ -50,7 +50,7 @@
         256,
         384
       ],
-      "path": "/_next/image",
+      "path": "/admin/_next/image/",
       "loader": "default",
       "loaderFile": "",
       "domains": [],
@@ -73,18 +73,16 @@
       "pagesBufferLength": 5
     },
     "amp": {
-      "canonicalBase": ""
+      "canonicalBase": "/admin"
     },
-    "basePath": "",
+    "basePath": "/admin",
     "sassOptions": {},
-    "trailingSlash": false,
+    "trailingSlash": true,
     "i18n": null,
     "productionBrowserSourceMaps": false,
     "excludeDefaultMomentLocales": true,
     "serverRuntimeConfig": {},
-    "publicRuntimeConfig": {
-      "basePath": ""
-    },
+    "publicRuntimeConfig": {},
     "reactProductionProfiling": false,
     "reactStrictMode": null,
     "reactMaxHeadersLength": 6000,

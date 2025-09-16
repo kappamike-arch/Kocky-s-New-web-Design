@@ -152,7 +152,7 @@ export const submitApplication = async (req: Request, res: Response, next: NextF
             
             ${resumeFile ? `Resume attached: ${resumeFile.originalname}` : 'No resume attached'}
             
-            View application in admin panel: ${process.env.ADMIN_URL || 'http://72.167.227.205:4000'}/jobs
+            View application in admin panel: ${process.env.ADMIN_URL || 'https://staging.kockys.com/admin'}/jobs
           `
         }
       });

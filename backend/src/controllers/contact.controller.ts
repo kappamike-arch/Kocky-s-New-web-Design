@@ -22,7 +22,7 @@ export const createInquiry = async (req: Request, res: Response, next: NextFunct
         guestCount: guestCount ? parseInt(guestCount) : null,
         confirmationCode,
         status: 'NEW',
-        priority: 'MEDIUM' as any
+        priority: 'NORMAL'
       },
     });
 

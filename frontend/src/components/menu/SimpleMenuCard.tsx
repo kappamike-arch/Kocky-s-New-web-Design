@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getAssetUrl } from '@/lib/asset-config';
 
 export interface MenuItem {
   id: string;
@@ -56,13 +57,15 @@ export function SimpleMenuCard({
       <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
         {(item.image || item.imageUrl) && !imageError ? (
           <Image
-            src={item.image || (item.imageUrl?.startsWith('/')
-              ? `http://72.167.227.205${item.imageUrl}`
-              : item.imageUrl || '')}
+            src={getAssetUrl(item.image || item.imageUrl || '')}
             alt={item.name}
             fill
             className="object-cover"
-            onError={() => setImageError(true)}
+            onError={() => {
+              console.log('Image failed to load:', item.image || item.imageUrl);
+              setImageError(true);
+            }}
+            unoptimized={true}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-400">
@@ -83,7 +86,7 @@ export function SimpleMenuCard({
         </div>
         
         {/* Dietary Info */}
-        {item.dietaryInfo && item.dietaryInfo.length > 0 && (
+        {item.dietaryInfo && Array.isArray(item.dietaryInfo) && item.dietaryInfo.length > 0 && (
           <div className="flex gap-1 mb-2">
             {item.dietaryInfo.map((info) => (
               <span

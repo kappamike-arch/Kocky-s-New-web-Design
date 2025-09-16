@@ -24,8 +24,8 @@ export default function HomePage() {
   const [fallbackTried, setFallbackTried] = useState(false);
   
   // API base (with /api) and media origin (web server)
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://72.167.227.205:5001/api';
-  const MEDIA_ORIGIN = process.env.NEXT_PUBLIC_MEDIA_URL || 'http://72.167.227.205/uploads';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+  const MEDIA_ORIGIN = process.env.NEXT_PUBLIC_MEDIA_URL || '/uploads';
   
   // Hero settings state - use consistent initial state to avoid hydration mismatch
   const [heroData, setHeroData] = useState({
@@ -73,7 +73,13 @@ export default function HomePage() {
           
         // Set video from hero settings
         if (settings.backgroundVideo) {
-          setHeroVideo(`${MEDIA_ORIGIN.replace('/uploads', '')}${settings.backgroundVideo}`);
+          // Check if it's an uploaded file or static file
+          if (settings.backgroundVideo.startsWith('/uploads/')) {
+            setHeroVideo(`${MEDIA_ORIGIN.replace('/uploads', '')}${settings.backgroundVideo}`);
+          } else {
+            // Static file in public directory
+            setHeroVideo(settings.backgroundVideo);
+          }
           setVideoError(false);
         } else {
           // Use default video if no video is configured
@@ -83,7 +89,13 @@ export default function HomePage() {
           
           // Set background image from hero settings
           if (settings.backgroundImage) {
-            setHeroBackground(`${MEDIA_ORIGIN.replace('/uploads', '')}${settings.backgroundImage}`);
+            // Check if it's an uploaded file or static file
+            if (settings.backgroundImage.startsWith('/uploads/')) {
+              setHeroBackground(`${MEDIA_ORIGIN.replace('/uploads', '')}${settings.backgroundImage}`);
+            } else {
+              // Static file in public directory
+              setHeroBackground(settings.backgroundImage);
+            }
           }
         }
         
@@ -268,7 +280,7 @@ export default function HomePage() {
                       ? heroData.logoUrl 
                       : heroData.logoUrl.startsWith('/uploads/') 
                         ? `${MEDIA_ORIGIN.replace('/uploads', '')}${heroData.logoUrl}`  // Web server serves uploaded files
-                        : heroData.logoUrl
+                        : heroData.logoUrl  // Static file in public directory
                   }
                   alt="Kocky's Logo" 
                   className="h-40 md:h-52 lg:h-64 w-auto"

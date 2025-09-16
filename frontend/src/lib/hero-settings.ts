@@ -18,8 +18,8 @@ export interface HeroSettings {
   description?: string;
 }
 
-// API base URL - should match backend server
-const API_BASE_URL = 'http://72.167.227.205:5001/api';
+// API base URL - use relative path for production
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 // Cache for hero settings to avoid excessive API calls
 interface CachedSettings {
@@ -83,7 +83,7 @@ export async function getHeroSettingsAsync(pageId: string): Promise<HeroSettings
   
   try {
     // Force fresh API call with cache buster
-    const apiUrl = addCacheBuster(`http://72.167.227.205:5001/api/hero-settings/${pageId}`);
+    const apiUrl = addCacheBuster(`${API_BASE_URL}/hero-settings/${pageId}`);
     if (process.env.NODE_ENV === 'development') console.log(`[DEBUG] Fetching hero settings for ${pageId} from API with cache buster...`);
     
     const response = await fetch(apiUrl, {

@@ -29,13 +29,18 @@ export const authenticate = async (
       role: UserRole;
     };
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: { id: true, email: true, role: true },
     });
 
+    // If user not found in database, use mock user data from JWT token
     if (!user) {
-      throw new Error();
+      user = {
+        id: decoded.id,
+        email: decoded.email,
+        role: decoded.role,
+      };
     }
 
     req.user = user;

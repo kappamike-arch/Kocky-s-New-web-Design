@@ -7,19 +7,20 @@ import { EditableHeroSection } from '@/components/sections/HeroSection';
 import { MenuCard, MenuItem } from '@/components/menu/MenuCard';
 import { getHeroSettingsAsync, clearHeroSettingsCache } from '@/lib/hero-settings';
 import { pageContentAPI } from '@/lib/api/page-content';
+import { getAssetUrl } from '@/lib/asset-config';
 
 // Load Happy Hour items from API with timeout
 const loadHappyHourItems = async (): Promise<MenuItem[]> => {
   try {
     console.log('[HAPPY-HOUR] Starting API call...');
-    console.log('[HAPPY-HOUR] Making fetch request to: http://72.167.227.205:5001/api/enhanced-menu/frontend?menuType=HAPPY_HOUR');
+    console.log('[HAPPY-HOUR] Making fetch request to: /api/enhanced-menu/frontend?menuType=HAPPY_HOUR');
     
     // Create an AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
     console.log('[HAPPY-HOUR] About to make fetch request...');
-    const response = await fetch('http://72.167.227.205:5001/api/enhanced-menu/frontend?menuType=HAPPY_HOUR', {
+    const response = await fetch('/api/enhanced-menu/frontend?menuType=HAPPY_HOUR', {
       signal: controller.signal,
       headers: {
         'Accept': 'application/json',
@@ -52,7 +53,7 @@ const loadHappyHourItems = async (): Promise<MenuItem[]> => {
                   price: parseFloat(item.happyHourPrice || item.price) || 0,
                   originalPrice: parseFloat(item.price) || 0,
                   category: (item.category || 'appetizer').toLowerCase(),
-                  image: item.image ? `http://72.167.227.205${item.image}` : null,
+                  image: item.image ? getAssetUrl(item.image) : null,
                   featured: Boolean(item.featured),
                   rating: 4.5, // Default rating
                   servingSize: item.servingSize || '',

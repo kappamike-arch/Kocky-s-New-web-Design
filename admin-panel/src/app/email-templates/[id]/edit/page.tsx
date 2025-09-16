@@ -58,7 +58,7 @@ export default function EditEmailTemplatePage() {
 
   const fetchTemplate = async () => {
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/email-templates/${templateId}`);
+      const response = await fetch(`/api/email-templates/${templateId}`);
       if (response.ok) {
         const data = await response.json();
         setTemplate(data.template);
@@ -80,8 +80,8 @@ export default function EditEmailTemplatePage() {
     setSaving(true);
     try {
       const url = templateId === 'new' 
-        ? 'http://72.167.227.205:5001/api/email-templates'
-        : `http://72.167.227.205:5001/api/email-templates/${templateId}`;
+        ? '/api/email-templates'
+        : `/api/email-templates/${templateId}`;
       
       const method = templateId === 'new' ? 'POST' : 'PUT';
 
@@ -109,7 +109,7 @@ export default function EditEmailTemplatePage() {
     if (!template) return;
 
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/email-templates/${templateId}/preview`, {
+      const response = await fetch(`/api/email-templates/${templateId}/preview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

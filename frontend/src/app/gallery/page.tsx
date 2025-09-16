@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { X, ChevronLeft, ChevronRight, Expand, Heart, Share2 } from 'lucide-react';
 import { HeroSection } from '@/components/sections/HeroSection';
+import { getAssetUrl } from '@/lib/asset-config';
 
 interface GalleryImage {
   id: string;
@@ -28,7 +29,7 @@ export default function GalleryPage() {
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const response = await fetch('http://72.167.227.205:5001/api/gallery/items?isActive=true');
+        const response = await fetch('/api/gallery/items?isActive=true');
         const data = await response.json();
         
         if (data.success) {
@@ -204,7 +205,7 @@ export default function GalleryPage() {
                   {/* Image Container with Aspect Ratio */}
                   <div className="aspect-square relative">
                     <img
-                      src={`http://72.167.227.205:5001${image.thumbnailUrl || image.imageUrl}`}
+                      src={getAssetUrl(image.thumbnailUrl || image.imageUrl)}
                       alt={image.title || 'Gallery image'}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
@@ -326,7 +327,7 @@ export default function GalleryPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <img
-                src={`http://72.167.227.205:5001${selectedImage.imageUrl}`}
+                src={getAssetUrl(selectedImage.imageUrl)}
                 alt={selectedImage.title || 'Gallery image'}
                 className="max-w-full max-h-[90vh] object-contain rounded-lg"
               />

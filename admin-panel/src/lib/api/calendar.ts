@@ -1,4 +1,5 @@
 import { api } from './client';
+import { API_URL } from '@/config/api';
 
 export const calendarAPI = {
   // Get all events
@@ -13,7 +14,6 @@ export const calendarAPI = {
   
   // Get iCal feed URL (for reference)
   getICalUrl: () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://72.167.227.205:5001';
-    return `${baseUrl}/api/calendar/ical`;
+    return `${API_URL}/calendar/ical`;
   }
 };

@@ -1,0 +1,15 @@
+○ nginx.service - The nginx HTTP and reverse proxy server
+     Loaded: loaded (]8;;file://205.227.167.72.host.secureserver.net/usr/lib/systemd/system/nginx.service/usr/lib/systemd/system/nginx.service]8;;; [0;1;32menabled[0m; preset: [0;1;38;5;185mdisabled[0m)
+     Active: inactive (dead) since Thu 2025-09-11 17:27:01 UTC; 1min 43s ago
+   Duration: 1min 14.185s
+    Process: 1857607 ExecStartPre=/usr/bin/rm -f /run/nginx.pid (code=exited, status=0/SUCCESS)
+    Process: 1857608 ExecStartPre=/usr/sbin/nginx -t (code=exited, status=0/SUCCESS)
+    Process: 1857611 ExecStart=/usr/sbin/nginx (code=exited, status=0/SUCCESS)
+   Main PID: 1857613 (code=exited, status=0/SUCCESS)
+        CPU: 46ms
+
+Sep 11 17:25:47 205.227.167.72.host.secureserver.net systemd[1]: Starting The nginx HTTP and reverse proxy server...
+Sep 11 17:25:47 205.227.167.72.host.secureserver.net nginx[1857608]: nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+Sep 11 17:25:47 205.227.167.72.host.secureserver.net nginx[1857608]: nginx: configuration file /etc/nginx/nginx.conf test is successful
+Sep 11 17:25:47 205.227.167.72.host.secureserver.net systemd[1]: Started The nginx HTTP and reverse proxy server.
+Sep 11 17:27:01 205.227.167.72.host.secureserver.net systemd[1]: nginx.service: Deactivated successfully.

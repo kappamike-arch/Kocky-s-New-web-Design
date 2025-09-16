@@ -15,7 +15,7 @@ export default function LoginPage() {
   useEffect(() => {
     // Check if already authenticated
     if (auth.isAuthenticated()) {
-      router.push('/dashboard');
+      router.push('/admin');
     }
   }, [router]);
 
@@ -40,7 +40,7 @@ export default function LoginPage() {
           
           // Small delay to ensure cookies are set
           setTimeout(() => {
-            router.push('/dashboard');
+            router.push('/');
           }, 100);
         } else {
           setError('Access denied. Admin privileges required.');
@@ -130,7 +130,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-500">
-            <p>Admin Portal URL: https://staging.kockys.com/admin</p>
+            <p>Admin Portal URL: /admin</p>
             <p className="mt-2">For security issues, contact IT support</p>
           </div>
 

@@ -35,7 +35,7 @@ export default function MediaManagementPage() {
       }
 
       // Update the backend with the media preference
-      const response = await fetch(`http://72.167.227.205:5001/api/hero-settings/${sectionId}`, {
+      const response = await fetch(`/api/hero-settings/${sectionId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ export default function MediaManagementPage() {
         try {
           const token = Cookies.get('auth-token');
           if (token) {
-            const response = await fetch(`http://72.167.227.205:5001/api/hero-settings/${section.id}`, {
+            const response = await fetch(`/api/hero-settings/${section.id}`, {
               headers: {
                 'Authorization': `Bearer ${token}`
               }

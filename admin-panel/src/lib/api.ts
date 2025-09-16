@@ -1,9 +1,10 @@
 import axios from "axios";
+import { API_URL, API_BASE } from '@/config/api';
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://72.167.227.205:5001";
+export { API_BASE };
 
 export const api = axios.create({
-  baseURL: `${API_BASE}/api`,
+  baseURL: API_URL,
   withCredentials: true,
 });
 

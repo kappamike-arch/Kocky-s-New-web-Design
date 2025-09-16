@@ -4,32 +4,43 @@ const nextConfig = {
     // Temporarily ignore build errors
     ignoreBuildErrors: true,
   },
-  metadataBase: new URL('http://72.167.227.205:3003'),
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
+        protocol: 'http',
         hostname: 'images.unsplash.com',
       },
       {
-        protocol: 'https',
+        protocol: 'http',
         hostname: 'lh3.googleusercontent.com',
       },
       {
-        protocol: 'https',
+        protocol: 'http',
         hostname: 'avatars.githubusercontent.com',
       },
       {
         protocol: 'http',
-        hostname: '72.167.227.205',
+        hostname: 'staging.kockys.com',
+        port: '',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'staging.kockys.com',
+        port: '5001',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'staging.kockys.com',
         port: '',
         pathname: '/uploads/**',
       },
     ],
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://72.167.227.205:5001/api',
-    NEXT_PUBLIC_MEDIA_URL: process.env.NEXT_PUBLIC_MEDIA_URL || 'http://72.167.227.205/uploads',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://staging.kockys.com/api',
+    NEXT_PUBLIC_MEDIA_URL: process.env.NEXT_PUBLIC_MEDIA_URL || '/uploads',
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   },
 };

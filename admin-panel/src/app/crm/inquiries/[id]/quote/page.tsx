@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import Link from 'next/link';
+import { api } from '@/lib/api/client';
 import toast from 'react-hot-toast';
 
 // UUID generation utility (compatible with all environments)
@@ -184,11 +185,8 @@ ADDITIONAL TERMS:
 
   const fetchEmailAccounts = async () => {
     try {
-      const response = await fetch('http://72.167.227.205:5001/api/crm/email-accounts');
-      if (response.ok) {
-        const data = await response.json();
-        setEmailAccounts(data.data || []);
-      }
+      const response = await api.get('/crm/email-accounts');
+      setEmailAccounts(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch email accounts:', error);
       // Set default accounts if API fails
@@ -202,16 +200,8 @@ ADDITIONAL TERMS:
 
   const fetchInquiry = async () => {
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/crm/inquiries/${params.id}`);
-      
-      if (!response.ok) {
-        toast.error('Failed to load inquiry');
-        setLoading(false);
-        return;
-      }
-      
-      const data = await response.json();
-      const inquiry = data.data || data;
+      const response = await api.get(`/crm/inquiries/${params.id}`);
+      const inquiry = response.data.data || response.data;
       
       // Pre-fill client info
       setClientInfo({
@@ -384,13 +374,9 @@ ADDITIONAL TERMS:
   // Update inquiry information
   const updateInquiryInfo = async () => {
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/crm/inquiries/${params.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(inquiryInfo),
-      });
+      const response = await api.put(`/crm/inquiries/${params.id}`, inquiryInfo);
       
-      if (response.ok) {
+      if (response.status === 200) {
         toast.success('Inquiry updated successfully');
       } else {
         toast.error('Failed to update inquiry');
@@ -522,28 +508,24 @@ ADDITIONAL TERMS:
         sendToCustomer: sendToClient,
       };
       
-      const response = await fetch(`http://72.167.227.205:5001/api/crm/inquiries/${params.id}/quotes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: calculateGrandTotal(),
-          validUntil: quoteDetails.validUntil,
-          serviceDetails: JSON.stringify(quoteData),
-          terms: notes.terms,
-          notes: notes.customNotes,
-          quoteItems: lineItems.map(item => ({
-            description: item.description,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            total: item.total,
-            notes: item.notes || '',
-          })),
-          sendToCustomer: sendToClient,
-          emailAccount: selectedEmailAccount,
-        }),
+      const response = await api.post(`/crm/inquiries/${params.id}/quotes`, {
+        amount: calculateGrandTotal(),
+        validUntil: quoteDetails.validUntil,
+        serviceDetails: JSON.stringify(quoteData),
+        terms: notes.terms,
+        notes: notes.customNotes,
+        quoteItems: lineItems.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.total,
+          notes: item.notes || '',
+        })),
+        sendToCustomer: sendToClient,
+        emailAccount: selectedEmailAccount,
       });
       
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error('Failed to save quote');
       }
       

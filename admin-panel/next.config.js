@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath: '/admin',
+  trailingSlash: true,            // fix redirect loop with Nginx
+  // assetPrefix is not usually needed; uncomment only if _next assets 404
+  // assetPrefix: '/admin',
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://72.167.227.205:5001/api',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://staging.kockys.com/api',
     NEXT_PUBLIC_ADMIN_SECRET: process.env.NEXT_PUBLIC_ADMIN_SECRET || 'admin-secret-key-change-this',
   },
   typescript: {
@@ -11,14 +15,6 @@ const nextConfig = {
   eslint: {
     // Temporarily ignore ESLint errors during build
     ignoreDuringBuilds: true,
-  },
-  // Configure asset prefix for staging domain
-  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
-  // Enable trailing slash for compatibility
-  trailingSlash: false,
-  // Configure public runtime config
-  publicRuntimeConfig: {
-    basePath: '',
   },
 };
 

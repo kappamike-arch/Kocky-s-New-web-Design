@@ -9,8 +9,10 @@ import { Calendar, Clock, ExternalLink, Coffee, Egg } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getHeroSettingsWithDefaults, getHeroSettingsAsync, clearHeroSettingsCache } from '@/lib/hero-settings';
 
+import { getApiUrl, getAssetUrl } from '@/lib/asset-config';
+
 // API endpoint for brunch items
-const API_BASE_URL = 'http://72.167.227.205:5001/api';
+const API_BASE_URL = getApiUrl('');
 
 // Function to fetch brunch items from enhanced menu API
 const fetchBrunchItems = async (): Promise<MenuItem[]> => {
@@ -37,7 +39,7 @@ const fetchBrunchItems = async (): Promise<MenuItem[]> => {
             featured: item.featured || false,
             rating: 4.5, // Default rating since not in API
             dietaryInfo: item.tags || [],
-            image: item.image || null,
+            image: item.image ? getAssetUrl(item.image) : null,
             available: item.available !== false,
             servingSize: item.servingSize || '',
             allergens: item.allergens || []
@@ -85,7 +87,7 @@ export default function BrunchPage() {
     backgroundImage: '',
     backgroundVideo: '',
     useLogo: true, // Start with logo enabled
-    logoUrl: '/uploads/logos/logo-brunch-1756543247360-105278658.png' // Use the brunch logo
+    logoUrl: '/kockys-logo.png' // Use the main logo as fallback
   });
   const [heroLoaded, setHeroLoaded] = useState(false);
 
@@ -133,7 +135,7 @@ export default function BrunchPage() {
           backgroundImage: settings.backgroundImage || '',
           backgroundVideo: settings.backgroundVideo || '',
           useLogo: settings.useLogo !== false, // Default to true
-          logoUrl: settings.logoUrl || '/uploads/logos/logo-brunch-1756543247360-105278658.png' // Use the brunch logo with fallback
+          logoUrl: settings.logoUrl || '/kockys-logo.png' // Use the main logo with fallback
         });
         setIsLoading(false);
         setHeroLoaded(true);

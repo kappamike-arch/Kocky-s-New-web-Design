@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
+import { api } from '@/lib/api/client';
 
 interface ContentSection {
   id: string;
@@ -123,15 +124,17 @@ export default function ContentManagementPage() {
   const fetchContent = async () => {
     try {
       // Fetch hero content from hero-settings endpoint
-      const heroResponse = await fetch('http://72.167.227.205:5001/api/hero-settings/home');
       let heroData = null;
-      if (heroResponse.ok) {
-        heroData = await heroResponse.json();
+      try {
+        const heroResponse = await api.get('/hero-settings/home');
+        heroData = heroResponse.data;
+      } catch (error) {
+        console.log('Hero settings not found, using defaults');
       }
       
       // Fetch other settings
-      const response = await fetch('http://72.167.227.205:5001/api/settings');
-      const data = await response.json();
+      const response = await api.get('/settings');
+      const data = response.data;
       
       if (data) {
         // Map settings to content sections
@@ -192,20 +195,16 @@ export default function ContentManagementPage() {
     try {
       // For hero content, save to hero-settings endpoint
       if (sectionId === 'hero_home') {
-        const response = await fetch('http://72.167.227.205:5001/api/hero-settings/home', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: newValue.title,
-            subtitle: newValue.subtitle,
-            description: newValue.description,
-            useLogo: false,
-            backgroundImage: newValue.image,
-            backgroundVideo: newValue.video
-          })
+        const response = await api.put('/hero-settings/home', {
+          title: newValue.title,
+          subtitle: newValue.subtitle,
+          description: newValue.description,
+          useLogo: false,
+          backgroundImage: newValue.image,
+          backgroundVideo: newValue.video
         });
         
-        if (response.ok) {
+        if (response.status === 200) {
           toast.success('Hero content updated successfully');
           setContent(prev => ({
             ...prev,
@@ -221,15 +220,11 @@ export default function ContentManagementPage() {
       }
       
       // For other content, use the settings endpoint
-      const response = await fetch('http://72.167.227.205:5001/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          [sectionId]: newValue
-        })
+      const response = await api.put('/settings', {
+        [sectionId]: newValue
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         toast.success('Content updated successfully');
         setContent(prev => ({
           ...prev,
@@ -253,15 +248,11 @@ export default function ContentManagementPage() {
     setSaving('online_ordering');
     
     try {
-      const response = await fetch('http://72.167.227.205:5001/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          onlineOrderingUrl: onlineOrderingUrl
-        })
+      const response = await api.put('/settings', {
+        onlineOrderingUrl: onlineOrderingUrl
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         toast.success('Online ordering URL updated');
       } else {
         throw new Error('Failed to save');
@@ -278,13 +269,9 @@ export default function ContentManagementPage() {
     setSaving('email_settings');
     
     try {
-      const response = await fetch('http://72.167.227.205:5001/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(emailSettings)
-      });
+      const response = await api.put('/settings', emailSettings);
 
-      if (response.ok) {
+      if (response.status === 200) {
         toast.success('Email settings updated');
       } else {
         throw new Error('Failed to save');
@@ -299,17 +286,13 @@ export default function ContentManagementPage() {
 
   const testEmailConfiguration = async () => {
     try {
-      const response = await fetch('http://72.167.227.205:5001/api/test-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: emailSettings.smtpUser,
-          subject: 'Test Email Configuration',
-          includePaymentLink: true
-        })
+      const response = await api.post('/test-email', {
+        to: emailSettings.smtpUser,
+        subject: 'Test Email Configuration',
+        includePaymentLink: true
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         toast.success('Test email sent! Check your inbox.');
       } else {
         throw new Error('Failed to send test email');
@@ -574,7 +557,7 @@ export default function ContentManagementPage() {
                 </p>
                 <Button
                   variant="outline"
-                  onClick={() => window.open('https://staging.kockys.com/order', '_blank')}
+                  onClick={() => window.open('/order', '_blank')}
                   className="border-gray-700"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
@@ -704,7 +687,7 @@ export default function ContentManagementPage() {
 
                   <Button
                     variant="outline"
-                    onClick={() => window.open('https://staging.kockys.com/admin/crm', '_blank')}
+                    onClick={() => window.open('/crm', '_blank')}
                     className="border-gray-700"
                   >
                     Open CRM to Test

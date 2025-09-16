@@ -1,0 +1,22 @@
+
+I need you to debug and fix the Email Templates issue in the Admin Panel at 
+http://staging.kockys.com/admin/email/templates. Right now it throws:
+
+- 'Application error: a client-side exception has occurred'
+- Console shows 401 Unauthorized from /api/email/templates
+- Backend logs show: 'The table main.Event does not exist' and 
+  'Email account default verification failed: Invalid login 535-5.7.8'
+
+Steps to follow:
+1. Check .env for EMAIL_USER, EMAIL_PASS, SMTP_HOST, SMTP_PORT. Fix Gmail by using App Passwords or relay.
+2. Inspect backend route /api/email/templates. Ensure auth middleware matches Admin Panel login.
+3. Verify Prisma schema includes Event or EmailTemplate. If missing, run:
+   npx prisma migrate status
+   npx prisma migrate deploy
+4. Tail backend logs:
+   pm2 logs kockys-backend --lines 40 --raw
+5. Fix frontend ↔ API calls to use correct /api base URL.
+6. Restart backend with:
+   pm2 restart kockys-backend
+7. Retest /admin/email/templates to confirm templates load without client-side error.
+

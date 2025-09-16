@@ -10,6 +10,7 @@ import {
 import { format } from 'date-fns';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { api } from '@/lib/api/client';
 
 interface Quote {
   id: string;
@@ -52,12 +53,11 @@ export default function QuotesPage() {
       const params = new URLSearchParams();
       if (filter !== 'ALL') params.append('status', filter);
       
-      const response = await fetch(`http://72.167.227.205:5001/api/quotes?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setQuotes(data.quotes || []);
+      const response = await api.get(`/quotes?${params}`);
+      if (response.data && response.data.success) {
+        setQuotes(response.data.quotes || []);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching quotes:', error);
       toast.error('Failed to fetch quotes');
     } finally {
@@ -67,19 +67,15 @@ export default function QuotesPage() {
 
   const updateQuoteStatus = async (quoteId: string, status: string) => {
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/quotes/${quoteId}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
+      const response = await api.put(`/quotes/${quoteId}/status`, { status });
 
-      if (response.ok) {
+      if (response.data && response.data.success) {
         toast.success(`Quote status updated to ${status}`);
         fetchQuotes();
       } else {
         toast.error('Failed to update quote status');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating quote:', error);
       toast.error('Failed to update quote status');
     }
@@ -87,21 +83,17 @@ export default function QuotesPage() {
 
   const sendQuote = async (quoteId: string) => {
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/quotes/${quoteId}/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: 'Thank you for your inquiry. Please find attached our quote for your event.' 
-        }),
+      const response = await api.post(`/quotes/${quoteId}/send`, { 
+        message: 'Thank you for your inquiry. Please find attached our quote for your event.' 
       });
 
-      if (response.ok) {
+      if (response.data && response.data.success) {
         toast.success('Quote sent successfully');
         fetchQuotes();
       } else {
         toast.error('Failed to send quote');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending quote:', error);
       toast.error('Failed to send quote');
     }
@@ -109,10 +101,12 @@ export default function QuotesPage() {
 
   const downloadPDF = async (quoteId: string, quoteNumber: string) => {
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/quotes/${quoteId}/pdf`);
+      const response = await api.get(`/quotes/${quoteId}/pdf`, {
+        responseType: 'blob'
+      });
       
-      if (response.ok) {
-        const blob = await response.blob();
+      if (response.data) {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -125,7 +119,7 @@ export default function QuotesPage() {
       } else {
         toast.error('Failed to download PDF');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error downloading PDF:', error);
       toast.error('Failed to download PDF');
     }
@@ -133,23 +127,18 @@ export default function QuotesPage() {
 
   const emailQuotePDF = async (quoteId: string) => {
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/quotes/${quoteId}/pdf/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: 'Thank you for your inquiry. Please find attached our quote for your event.',
-          cc: []
-        }),
+      const response = await api.post(`/quotes/${quoteId}/pdf/email`, {
+        message: 'Thank you for your inquiry. Please find attached our quote for your event.',
+        cc: []
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        toast.success(`Quote emailed to ${data.recipient}`);
+      if (response.data && response.data.success) {
+        toast.success(`Quote emailed to ${response.data.recipient}`);
         fetchQuotes();
       } else {
         toast.error('Failed to email quote');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error emailing quote:', error);
       toast.error('Failed to email quote');
     }
@@ -159,17 +148,15 @@ export default function QuotesPage() {
     if (!confirm('Are you sure you want to delete this quote?')) return;
 
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/quotes/${quoteId}`, {
-        method: 'DELETE',
-      });
+      const response = await api.delete(`/quotes/${quoteId}`);
 
-      if (response.ok) {
+      if (response.data && response.data.success) {
         toast.success('Quote deleted successfully');
         fetchQuotes();
       } else {
         toast.error('Failed to delete quote');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting quote:', error);
       toast.error('Failed to delete quote');
     }
@@ -389,7 +376,7 @@ export default function QuotesPage() {
                 <tr key={quote.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <Link 
-                      href={`/quotes/${quote.id}`}
+                      href={`/quotes/${quote.id}/edit`}
                       className="text-primary hover:underline font-medium"
                     >
                       {quote.quoteNumber}
@@ -424,9 +411,9 @@ export default function QuotesPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <Link
-                        href={`/quotes/${quote.id}`}
+                        href={`/quotes/${quote.id}/edit`}
                         className="text-blue-600 hover:text-blue-800"
-                        title="View"
+                        title="View/Edit"
                       >
                         <Eye className="w-4 h-4" />
                       </Link>

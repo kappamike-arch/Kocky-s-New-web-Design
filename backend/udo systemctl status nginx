@@ -1,0 +1,28 @@
+[0;1;32m●[0m nginx.service - The nginx HTTP and reverse proxy server
+     Loaded: loaded (]8;;file://205.227.167.72.host.secureserver.net/usr/lib/systemd/system/nginx.service/usr/lib/systemd/system/nginx.service]8;;; [0;1;32menabled[0m; preset: [0;1;38;5;185mdisabled[0m)
+     Active: [0;1;32mactive (running)[0m since Thu 2025-09-11 05:23:13 UTC; 8h ago
+    Process: 38825 ExecStartPre=/usr/bin/rm -f /run/nginx.pid (code=exited, status=0/SUCCESS)
+    Process: 38826 ExecStartPre=/usr/sbin/nginx -t (code=exited, status=0/SUCCESS)
+    Process: 38827 ExecStart=/usr/sbin/nginx (code=exited, status=0/SUCCESS)
+    Process: 398835 ExecReload=/usr/sbin/nginx -s reload (code=exited, status=0/SUCCESS)
+   Main PID: 38828 (nginx)
+      Tasks: 5 (limit: 48636)
+     Memory: 5.3M
+        CPU: 2.695s
+     CGroup: /system.slice/nginx.service
+             ├─[0;38;5;245m 38828 "nginx: master process /usr/sbin/nginx"[0m
+             ├─[0;38;5;245m398840 "nginx: worker process"[0m
+             ├─[0;38;5;245m398841 "nginx: worker process"[0m
+             ├─[0;38;5;245m398842 "nginx: worker process"[0m
+             └─[0;38;5;245m398843 "nginx: worker process"[0m
+
+Sep 11 06:36:31 205.227.167.72.host.secureserver.net systemd[1]: Reloading The nginx HTTP and reverse proxy server...
+Sep 11 06:36:31 205.227.167.72.host.secureserver.net systemd[1]: Reloaded The nginx HTTP and reverse proxy server.
+Sep 11 06:44:12 205.227.167.72.host.secureserver.net systemd[1]: Reloading The nginx HTTP and reverse proxy server...
+Sep 11 06:44:12 205.227.167.72.host.secureserver.net systemd[1]: Reloaded The nginx HTTP and reverse proxy server.
+Sep 11 07:24:35 205.227.167.72.host.secureserver.net systemd[1]: Reloading The nginx HTTP and reverse proxy server...
+Sep 11 07:24:35 205.227.167.72.host.secureserver.net systemd[1]: Reloaded The nginx HTTP and reverse proxy server.
+Sep 11 07:31:06 205.227.167.72.host.secureserver.net systemd[1]: Reloading The nginx HTTP and reverse proxy server...
+Sep 11 07:31:06 205.227.167.72.host.secureserver.net systemd[1]: Reloaded The nginx HTTP and reverse proxy server.
+Sep 11 07:37:19 205.227.167.72.host.secureserver.net systemd[1]: Reloading The nginx HTTP and reverse proxy server...
+Sep 11 07:37:19 205.227.167.72.host.secureserver.net systemd[1]: Reloaded The nginx HTTP and reverse proxy server.

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { 
   Facebook, 
   Instagram, 
@@ -59,24 +60,20 @@ export function Footer() {
   };
   const isLoading = false;
 
-  // Format business hours for display
-  const formatBusinessHours = () => {
-    // Use client-side only to avoid hydration mismatch
-    if (typeof window === 'undefined') {
-      return 'Mon-Sun: 11:00 AM - 2:00 AM'; // Server-side fallback
-    }
-    
+  // State for client-side business hours to avoid hydration mismatch
+  const [todayHours, setTodayHours] = useState('Mon-Sun: 11:00 AM - 2:00 AM');
+
+  // Set business hours on client-side only
+  useEffect(() => {
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-    const todayHours = businessHours?.[today as keyof typeof businessHours];
+    const hours = businessHours?.[today as keyof typeof businessHours];
     
-    if (typeof todayHours === 'string') {
-      return todayHours;
-    } else if (todayHours?.open && todayHours?.close) {
-      return `${todayHours.open} - ${todayHours.close}`;
+    if (typeof hours === 'string') {
+      setTodayHours(hours);
     } else {
-      return 'Mon-Sun: 11:00 AM - 2:00 AM';
+      setTodayHours('Mon-Sun: 11:00 AM - 2:00 AM');
     }
-  };
+  }, []);
 
   // Build social links dynamically from settings
   const socialLinks = [];
@@ -148,7 +145,7 @@ export function Footer() {
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 text-red-500 flex-shrink-0" />
                 <span className="text-sm">
-                  Today: {formatBusinessHours()}
+                  Today: {todayHours}
                 </span>
               </div>
             </div>

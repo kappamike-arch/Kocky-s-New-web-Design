@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB limit for menu item images
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -547,5 +547,70 @@ export const getMenuForFrontend = async (req: Request, res: Response, next: Next
   }
 };
 
-// Export upload middleware
-export const uploadMenuItemImageMiddleware = upload.single('image');
+// Upload menu item image
+export const uploadMenuItemImage = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided'
+      });
+    }
+    
+    // Construct the URL for the uploaded image
+    const imageUrl = `/uploads/menu-items/${req.file.filename}`;
+    
+    // Update the menu item with the new image URL
+    const updatedItem = await prisma.menuItem.update({
+      where: { id },
+      data: { image: imageUrl },
+      include: {
+        section: true
+      }
+    });
+    
+    res.json({
+      success: true,
+      data: updatedItem,
+      message: 'Image uploaded successfully'
+    });
+  } catch (error) {
+    logger.error('Failed to upload menu item image:', error);
+    next(error);
+  }
+};
+
+// Export upload middleware with error handling
+export const uploadMenuItemImageMiddleware = (req: any, res: any, next: any) => {
+  upload.single('image')(req, res, (err: any) => {
+    if (err) {
+      console.error('[Menu Item Image Upload] Multer error:', err);
+      
+      // Handle specific multer errors
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+          success: false,
+          message: 'File too large. Maximum size is 10MB.'
+        });
+      }
+      
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({
+          success: false,
+          message: 'Unexpected file field. Please use "image" field.'
+        });
+      }
+      
+      // Generic multer error
+      return res.status(400).json({
+        success: false,
+        message: 'File upload error: ' + err.message
+      });
+    }
+    
+    // No multer error, continue to the actual route handler
+    next();
+  });
+};

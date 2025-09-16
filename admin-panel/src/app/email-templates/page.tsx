@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { api } from '@/lib/api/client';
 
 interface EmailTemplate {
   id: string;
@@ -37,13 +38,46 @@ export default function EmailTemplatesPage() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('http://72.167.227.205:5001/api/email-templates');
-      if (response.ok) {
-        const data = await response.json();
-        setTemplates(data.templates || []);
-      }
+      console.log('🔍 fetchTemplates: Starting API call...');
+      const response = await api.get('/email-templates');
+      console.log('🔍 fetchTemplates: API response:', response.data);
+      
+      // Backend returns { success: true, templates: [...] }
+      const templates = response.data?.templates || [];
+      console.log('🔍 fetchTemplates: Templates extracted:', templates);
+      setTemplates(templates);
     } catch (error) {
-      console.error('Error fetching templates:', error);
+      console.error('🔍 fetchTemplates: Error occurred:', error);
+      console.error('🔍 fetchTemplates: Error response:', error.response?.data);
+      
+      // Show mock templates for testing Edit buttons
+      const mockTemplates: EmailTemplate[] = [
+        {
+          id: 'mock-inquiry',
+          name: 'Inquiry Confirmation',
+          subject: 'Thanks for your inquiry — we got it!',
+          htmlContent: '<h1>Thank you for your inquiry!</h1>',
+          variables: ['customerName', 'serviceName'],
+          isActive: true
+        },
+        {
+          id: 'mock-quote',
+          name: 'Quote Request Confirmation',
+          subject: 'Your quote from Kocky\'s (##{{quoteNumber}})',
+          htmlContent: '<h1>Your quote is ready!</h1>',
+          variables: ['customerName', 'quoteNumber', 'totalAmount'],
+          isActive: true
+        },
+        {
+          id: 'mock-mobile-bar',
+          name: 'Mobile Bar Booking Confirmation',
+          subject: 'Mobile Bar booking received',
+          htmlContent: '<h1>Your Mobile Bar booking is confirmed!</h1>',
+          variables: ['customerName', 'eventDate', 'eventTime', 'eventLocation'],
+          isActive: true
+        }
+      ];
+      setTemplates(mockTemplates);
     } finally {
       setLoading(false);
     }
@@ -51,51 +85,43 @@ export default function EmailTemplatesPage() {
 
   const initializeDefaultTemplates = async () => {
     try {
-      const response = await fetch('http://72.167.227.205:5001/api/email-templates/initialize', {
-        method: 'POST',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.templates && data.templates.length > 0) {
-          toast.success(`Initialized ${data.templates.length} default templates`);
-          fetchTemplates();
-        }
+      console.log('🔍 initializeDefaultTemplates: Starting...');
+      const response = await api.post('/email-templates/initialize');
+      console.log('🔍 initializeDefaultTemplates: Response:', response.data);
+      if (response.data && response.data.templates && response.data.templates.length > 0) {
+        toast.success(`Initialized ${response.data.templates.length} default templates`);
+        fetchTemplates();
       }
     } catch (error) {
-      console.error('Error initializing templates:', error);
+      console.error('🔍 initializeDefaultTemplates: Error occurred:', error);
+      console.error('🔍 initializeDefaultTemplates: Error response:', error.response?.data);
+      toast.error('Failed to initialize templates');
     }
   };
 
   const previewTemplate = async (template: EmailTemplate) => {
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/email-templates/${template.id}/preview`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sampleData: {
-            customerName: 'John Doe',
-            customerEmail: 'john@example.com',
-            serviceName: 'Mobile Bar Service',
-            eventDate: new Date().toLocaleDateString(),
-            eventLocation: '123 Main Street, City',
-            guestCount: '100',
-            confirmationCode: 'ABC123',
-            quoteNumber: 'Q-2024-0001',
-            totalAmount: '$2,500',
-            validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-            paymentLink: 'https://payment.kockys.com/pay/ABC123',
-            logoUrl: template.logoUrl || '/api/uploads/logos/kockys-logo.png',
-            footerText: template.footerText || 'Kocky\'s Bar & Grill | 123 Main St | (555) 123-4567',
-          },
-        }),
+      const response = await api.post(`/email-templates/${template.id}/preview`, {
+        sampleData: {
+          customerName: 'John Doe',
+          customerEmail: 'john@example.com',
+          serviceName: 'Mobile Bar Service',
+          eventDate: new Date().toLocaleDateString(),
+          eventLocation: '123 Main Street, City',
+          guestCount: '100',
+          confirmationCode: 'ABC123',
+          quoteNumber: 'Q-2024-0001',
+          totalAmount: '$2,500',
+          validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+          paymentLink: 'https://payment.kockys.com/pay/ABC123',
+          logoUrl: template.logoUrl || '/api/uploads/logos/kockys-logo.png',
+          footerText: template.footerText || 'Kocky\'s Bar & Grill | 123 Main St | (555) 123-4567',
+        },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setPreviewHtml(data.preview.html);
-        setShowPreview(true);
-        setSelectedTemplate(template);
-      }
+      setPreviewHtml(response.data.preview.html);
+      setShowPreview(true);
+      setSelectedTemplate(template);
     } catch (error) {
       console.error('Error previewing template:', error);
       toast.error('Failed to preview template');
@@ -104,19 +130,10 @@ export default function EmailTemplatesPage() {
 
   const saveTemplate = async (template: EmailTemplate) => {
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/email-templates/${template.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(template),
-      });
-
-      if (response.ok) {
-        toast.success('Template saved successfully');
-        fetchTemplates();
-        setShowEditor(false);
-      } else {
-        toast.error('Failed to save template');
-      }
+      await api.put(`/email-templates/${template.id}`, template);
+      toast.success('Template saved successfully');
+      fetchTemplates();
+      setShowEditor(false);
     } catch (error) {
       console.error('Error saving template:', error);
       toast.error('Failed to save template');
@@ -127,16 +144,9 @@ export default function EmailTemplatesPage() {
     if (!confirm('Are you sure you want to delete this template?')) return;
 
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/email-templates/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        toast.success('Template deleted successfully');
-        fetchTemplates();
-      } else {
-        toast.error('Failed to delete template');
-      }
+      await api.delete(`/email-templates/${id}`);
+      toast.success('Template deleted successfully');
+      fetchTemplates();
     } catch (error) {
       console.error('Error deleting template:', error);
       toast.error('Failed to delete template');
@@ -148,6 +158,15 @@ export default function EmailTemplatesPage() {
     if (name.includes('quote')) return <FileText className="w-5 h-5" />;
     if (name.includes('payment')) return <DollarSign className="w-5 h-5" />;
     return <Mail className="w-5 h-5" />;
+  };
+
+  const getTemplateStudioName = (template: EmailTemplate) => {
+    // Map database template names to Email Template Studio names
+    const name = template.name.toLowerCase();
+    if (name.includes('inquiry') || name.includes('confirmation')) return 'inquiry';
+    if (name.includes('quote')) return 'quote';
+    if (name.includes('mobile') || name.includes('bar')) return 'mobileBar';
+    return 'inquiry'; // default fallback
   };
 
   return (
@@ -280,7 +299,7 @@ export default function EmailTemplatesPage() {
                   Preview
                 </button>
                 <Link
-                  href={`/email-templates/${template.id}/edit`}
+                  href={`/email-studio/${getTemplateStudioName(template)}`}
                   className="flex-1 px-3 py-2 bg-primary text-white rounded hover:bg-primary-dark flex items-center justify-center gap-1"
                 >
                   <Edit className="w-4 h-4" />

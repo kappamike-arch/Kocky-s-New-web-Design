@@ -7,12 +7,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { emailLists } from '@/lib/api/email-lists';
 import { analytics } from '@/lib/api/analytics';
 
 const schema = z.object({
   email: z.string().email('Please enter a valid email'),
   firstName: z.string().optional(),
+  phone: z.string().optional(),
+  consentSms: z.boolean().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -69,10 +70,25 @@ export function FloatingEmailSignup() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      await emailLists.subscribe({
-        ...data,
-        source: 'popup',
+      const response = await fetch('/api/email/contacts/public', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          firstName: data.firstName,
+          phone: data.phone,
+          tags: ['newsletter', 'popup'],
+          consentEmail: true,
+          consentSms: data.consentSms || false,
+        }),
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to subscribe');
+      }
 
       toast.success('🎉 Welcome to the family! Check your email for a special offer.');
       localStorage.setItem('newsletter-subscribed', 'true');
@@ -83,11 +99,7 @@ export function FloatingEmailSignup() {
         setIsOpen(false);
       }, 2000);
     } catch (error: any) {
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error('Something went wrong. Please try again.');
-      }
+      toast.error(error.message || 'Something went wrong. Please try again.');
     }
   };
 
@@ -225,6 +237,27 @@ export function FloatingEmailSignup() {
                         {errors.email && (
                           <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
                         )}
+                      </div>
+
+                      <div>
+                        <input
+                          {...register('phone')}
+                          type="tel"
+                          placeholder="Phone number (optional)"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-gray-700 placeholder-gray-400"
+                        />
+                      </div>
+
+                      <div className="flex items-center">
+                        <input
+                          {...register('consentSms')}
+                          type="checkbox"
+                          id="consentSms"
+                          className="mr-2 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="consentSms" className="text-sm text-gray-600">
+                          Send me text updates about special offers
+                        </label>
                       </div>
 
                       <motion.button

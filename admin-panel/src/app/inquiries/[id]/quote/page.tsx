@@ -79,7 +79,7 @@ Additional Terms:
   const fetchInquiry = async () => {
     try {
       console.log(`[Quote Creation] Fetching inquiry with ID: ${inquiryId}`);
-      const response = await fetch(`http://72.167.227.205:5001/api/crm/inquiries/${inquiryId}`);
+      const response = await fetch(`/api/crm/inquiries/${inquiryId}`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -223,7 +223,7 @@ Additional Terms:
       
       console.log('[Quote Creation] Request body:', requestBody);
       
-      const response = await fetch(`http://72.167.227.205:5001/api/crm/inquiries/${inquiryId}/quotes`, {
+      const response = await fetch(`/api/crm/inquiries/${inquiryId}/quotes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -248,7 +248,7 @@ Additional Terms:
       
       if (sendNow && data.id) {
         // Send the quote immediately
-        const sendResponse = await fetch(`http://72.167.227.205:5001/api/quotes/${data.id}/send`, {
+        const sendResponse = await fetch(`/api/quotes/${data.id}/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

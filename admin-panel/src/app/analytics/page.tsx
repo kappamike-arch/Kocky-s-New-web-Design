@@ -35,7 +35,7 @@ export default function AnalyticsPage() {
   const { data: crmData } = useQuery({
     queryKey: ['crm-analytics'],
     queryFn: async () => {
-      const response = await fetch('http://72.167.227.205:5001/api/crm/inquiries');
+      const response = await fetch('/api/crm/inquiries');
       return response.json();
     },
     retry: 1,

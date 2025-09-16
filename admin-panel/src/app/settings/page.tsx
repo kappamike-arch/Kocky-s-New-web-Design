@@ -634,7 +634,7 @@ export default function SettingsPage() {
                       <button
                         onClick={async () => {
                           try {
-                            const response = await fetch('http://72.167.227.205:5001/api/oauth/microsoft/support/auth', {
+                            const response = await fetch('/api/oauth/microsoft/support/auth', {
                               method: 'POST',
                             });
                             const data = await response.json();

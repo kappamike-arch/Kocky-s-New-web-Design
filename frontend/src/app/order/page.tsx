@@ -16,7 +16,7 @@ export default function OrderOnlinePage() {
   useEffect(() => {
     const fetchOrderingUrl = async () => {
       try {
-        const response = await fetch('http://72.167.227.205:5001/api/settings');
+        const response = await fetch('/api/settings');
         const data = await response.json();
         
         // Use the online ordering URL from settings or fallback

@@ -27,8 +27,8 @@ export default function LoginPage() {
     if (auth.isAuthenticated()) {
       console.log('✅ Login Page: User is authenticated, redirecting...');
       setRedirecting(true);
-      // Use window.location for more reliable redirect
-      window.location.href = '/dashboard';
+      // User is authenticated, stay on this page (which will show dashboard)
+      // No redirect needed since this page will serve as the dashboard
     } else {
       console.log('❌ Login Page: User not authenticated, showing login form');
     }
@@ -54,8 +54,8 @@ export default function LoginPage() {
           console.log('Redirecting to dashboard...');
           setRedirecting(true);
           
-          // Use window.location for immediate redirect without hydration issues
-          window.location.href = '/dashboard';
+          // Login successful, stay on this page (which will show dashboard)
+          // No redirect needed since this page will serve as the dashboard
         } else {
           setError('Access denied. Admin privileges required.');
           // Logout the non-admin user
@@ -81,13 +81,107 @@ export default function LoginPage() {
     }
   };
 
-  // Show loading screen during mount or redirect
-  if (!mounted || redirecting) {
+  // Show loading screen during mount
+  if (!mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white text-lg">{redirecting ? 'Loading dashboard...' : 'Initializing...'}</p>
+          <p className="text-white text-lg">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If authenticated, show dashboard content
+  if (auth.isAuthenticated()) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="mt-2 text-gray-600">Welcome to Kocky's Admin Panel</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                    <span className="text-white font-bold">$</span>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">Total Revenue</p>
+                  <p className="text-2xl font-bold text-gray-900">$45,678</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                    <span className="text-white font-bold">📋</span>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">Total Orders</p>
+                  <p className="text-2xl font-bold text-gray-900">892</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                    <span className="text-white font-bold">📅</span>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">Reservations</p>
+                  <p className="text-2xl font-bold text-gray-900">234</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
+                    <span className="text-white font-bold">👥</span>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">Users</p>
+                  <p className="text-2xl font-bold text-gray-900">3,456</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <h3 className="font-medium text-gray-900">Manage Menu</h3>
+                  <p className="text-sm text-gray-500">Update menu items and pricing</p>
+                </button>
+                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <h3 className="font-medium text-gray-900">View Reservations</h3>
+                  <p className="text-sm text-gray-500">Check and manage bookings</p>
+                </button>
+                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <h3 className="font-medium text-gray-900">Analytics</h3>
+                  <p className="text-sm text-gray-500">View detailed reports</p>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -156,7 +250,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-500">
-            <p>Admin Portal URL: https://staging.kockys.com/admin</p>
+            <p>Admin Portal URL: /admin</p>
             <p className="mt-2">For security issues, contact IT support</p>
           </div>
 

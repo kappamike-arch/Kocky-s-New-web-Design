@@ -18,16 +18,16 @@ function getLogoUrl(logoUrl?: string): string {
   }
   
   // Get media base URL from environment
-  const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL || 'http://72.167.227.205/uploads';
+  const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL || '/uploads';
   
   // If it starts with /uploads/, it's served by the backend
   if (logoUrl.startsWith('/uploads/')) {
     return `${MEDIA_BASE_URL.replace('/uploads', '')}${logoUrl}`;
   }
   
-  // If it starts with /images/ or /videos/, add /uploads/ prefix and serve from backend
+  // If it starts with /images/ or /videos/, it's a static file in public directory
   if (logoUrl.startsWith('/images/') || logoUrl.startsWith('/videos/')) {
-    return `${MEDIA_BASE_URL}${logoUrl}`;
+    return logoUrl;
   }
   
   // Otherwise, it's a static file from the frontend
@@ -43,16 +43,16 @@ function getFullMediaUrl(mediaUrl: string): string {
   }
   
   // Get media base URL from environment
-  const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL || 'http://72.167.227.205/uploads';
+  const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL || '/uploads';
   
   // If it starts with /uploads/, it's served by the backend
   if (mediaUrl.startsWith('/uploads/')) {
     return `${MEDIA_BASE_URL.replace('/uploads', '')}${mediaUrl}`;
   }
   
-  // If it starts with /images/ or /videos/, add /uploads/ prefix and serve from backend
+  // If it starts with /images/ or /videos/, it's a static file in public directory
   if (mediaUrl.startsWith('/images/') || mediaUrl.startsWith('/videos/')) {
-    return `${MEDIA_BASE_URL}${mediaUrl}`;
+    return mediaUrl;
   }
   
   // Otherwise, it's a static file from the frontend

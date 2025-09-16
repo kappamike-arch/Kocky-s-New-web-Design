@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3003",
+    "dev": "next dev -H 0.0.0.0 -p 3003",
     "build": "next build",
-    "start": "next start -p 3003",
-    "lint": "next lint"
+    "start": "next start -H 0.0.0.0 -p 3003",
+    "lint": "next lint",
+    "start:prod": "next start -H 0.0.0.0 -p 3003"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^1.0.12",

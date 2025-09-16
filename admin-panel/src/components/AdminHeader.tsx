@@ -67,7 +67,7 @@ export default function AdminHeader() {
   };
 
   const menuItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: Home },
+    { name: 'Dashboard', path: '/admin', icon: Home },
     { name: 'Content', path: '/content', icon: Type },
     { name: 'Calendar', path: '/calendar', icon: CalendarDays },
     { name: 'CRM', path: '/crm', icon: Briefcase },
@@ -108,9 +108,9 @@ export default function AdminHeader() {
                 <MenuIcon className="w-5 h-5" />
               )}
             </button>
-            {pathname !== '/dashboard' && (
+            {pathname !== '/admin' && (
               <Link 
-                href="/dashboard"
+                href="/admin"
                 className="text-gray-600 hover:text-gray-900"
               >
                 <ChevronLeft className="w-5 h-5" />

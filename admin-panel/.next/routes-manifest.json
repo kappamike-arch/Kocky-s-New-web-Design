@@ -2,14 +2,35 @@
   "version": 3,
   "pages404": true,
   "caseSensitive": false,
-  "basePath": "",
+  "basePath": "/admin",
   "redirects": [
     {
-      "source": "/:path+/",
-      "destination": "/:path+",
+      "source": "/admin",
+      "destination": "/admin/",
+      "basePath": false,
       "internal": true,
       "statusCode": 308,
-      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+      "regex": "^/admin$"
+    },
+    {
+      "source": "/:file((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/]+\\.\\w+)/",
+      "destination": "/:file",
+      "internal": true,
+      "missing": [
+        {
+          "type": "header",
+          "key": "x-nextjs-data"
+        }
+      ],
+      "statusCode": 308,
+      "regex": "^(?:/((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/]+\\.\\w+))/$"
+    },
+    {
+      "source": "/:notfile((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/\\.]+)",
+      "destination": "/:notfile/",
+      "internal": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/\\.]+))$"
     }
   ],
   "headers": [],
@@ -19,6 +40,14 @@
     "fallback": []
   },
   "dynamicRoutes": [
+    {
+      "page": "/api/email/templates/[templateId]",
+      "regex": "^/api/email/templates/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPtemplateId": "nxtPtemplateId"
+      },
+      "namedRegex": "^/api/email/templates/(?<nxtPtemplateId>[^/]+?)(?:/)?$"
+    },
     {
       "page": "/crm/inquiries/[id]",
       "regex": "^/crm/inquiries/([^/]+?)(?:/)?$",
@@ -36,6 +65,14 @@
       "namedRegex": "^/crm/inquiries/(?<nxtPid>[^/]+?)/quote(?:/)?$"
     },
     {
+      "page": "/email-studio/[templateId]",
+      "regex": "^/email\\-studio/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPtemplateId": "nxtPtemplateId"
+      },
+      "namedRegex": "^/email\\-studio/(?<nxtPtemplateId>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/email-templates/[id]/edit",
       "regex": "^/email\\-templates/([^/]+?)/edit(?:/)?$",
       "routeKeys": {
@@ -44,12 +81,28 @@
       "namedRegex": "^/email\\-templates/(?<nxtPid>[^/]+?)/edit(?:/)?$"
     },
     {
+      "page": "/events/[id]",
+      "regex": "^/events/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/events/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/inquiries/[id]/quote",
       "regex": "^/inquiries/([^/]+?)/quote(?:/)?$",
       "routeKeys": {
         "nxtPid": "nxtPid"
       },
       "namedRegex": "^/inquiries/(?<nxtPid>[^/]+?)/quote(?:/)?$"
+    },
+    {
+      "page": "/quotes/[id]/edit",
+      "regex": "^/quotes/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/quotes/(?<nxtPid>[^/]+?)/edit(?:/)?$"
     }
   ],
   "staticRoutes": [
@@ -96,10 +149,52 @@
       "namedRegex": "^/dashboard(?:/)?$"
     },
     {
+      "page": "/email",
+      "regex": "^/email(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/email(?:/)?$"
+    },
+    {
+      "page": "/email/campaigns",
+      "regex": "^/email/campaigns(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/email/campaigns(?:/)?$"
+    },
+    {
+      "page": "/email/contacts",
+      "regex": "^/email/contacts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/email/contacts(?:/)?$"
+    },
+    {
+      "page": "/email-studio",
+      "regex": "^/email\\-studio(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/email\\-studio(?:/)?$"
+    },
+    {
       "page": "/email-templates",
       "regex": "^/email\\-templates(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/email\\-templates(?:/)?$"
+    },
+    {
+      "page": "/email-templates/new",
+      "regex": "^/email\\-templates/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/email\\-templates/new(?:/)?$"
+    },
+    {
+      "page": "/events",
+      "regex": "^/events(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/events(?:/)?$"
+    },
+    {
+      "page": "/events/new",
+      "regex": "^/events/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/events/new(?:/)?$"
     },
     {
       "page": "/food-truck",

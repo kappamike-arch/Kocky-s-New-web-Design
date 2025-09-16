@@ -1,0 +1,93 @@
+// Email Marketing Models
+model EmailContact {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  firstName     String?
+  lastName      String?
+  phone         String?
+  tags          Json      @default("[]") // free-form labels/segments
+  consentEmail  Boolean   @default(true)
+  consentSms    Boolean   @default(false)
+  unsubscribedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  events        EmailEvent[]
+
+  @@index([email])
+  @@index([consentEmail])
+  @@index([unsubscribedAt])
+}
+
+model EmailMarketingTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  mjml        String   // MJML source
+  html        String?  // compiled HTML
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  campaigns   EmailCampaign[]
+
+  @@index([slug])
+}
+
+model EmailCampaign {
+  id           String   @id @default(cuid())
+  name         String
+  subject      String
+  fromName     String?
+  fromEmail    String
+  templateId   String?
+  template     EmailMarketingTemplate? @relation(fields: [templateId], references: [id])
+  html         String?  // final compiled HTML for this send
+  status       CampaignStatus @default(DRAFT)
+  segmentTags  Json     @default("[]") // send to contacts who have ANY of these tags; empty = all consenting
+  scheduledAt  DateTime?
+  sentAt       DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  events       EmailEvent[]
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([sentAt])
+}
+
+model EmailEvent {
+  id         String      @id @default(cuid())
+  contactId  String
+  contact    EmailContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  campaignId String?
+  campaign   EmailCampaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  type       EmailEventType
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([contactId])
+  @@index([campaignId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+enum CampaignStatus { 
+  DRAFT 
+  SCHEDULED 
+  SENDING 
+  SENT 
+  CANCELLED 
+}
+
+enum EmailEventType { 
+  SENT 
+  OPEN 
+  CLICK 
+  BOUNCE 
+  COMPLAINT 
+  UNSUBSCRIBE 
+}
+
+
+
+
+
+

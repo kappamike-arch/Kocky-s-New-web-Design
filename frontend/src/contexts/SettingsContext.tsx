@@ -46,7 +46,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       // Try to fetch from API, but don't fail if it doesn't work
-      const response = await fetch('http://72.167.227.205:5001/api/settings/public');
+      const response = await fetch('/api/settings/public');
       if (response.ok) {
         const data = await response.json();
         if (data && data.success) {

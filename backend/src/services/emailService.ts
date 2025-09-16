@@ -1,5 +1,6 @@
 import nodemailer, { Transporter } from 'nodemailer';
 import { logger } from '../utils/logger';
+import { graphEmailService } from './graphEmailService';
 
 export type EmailAccount = 'quotes' | 'support' | 'general' | 'default';
 
@@ -318,9 +319,196 @@ export class MultiAccountEmailService {
   }
 
   /**
-   * Send automatic inquiry confirmation
+   * Render Email Template Studio template with data
+   */
+  private renderEmailTemplate(templateData: any, data: any): string {
+    const { brand, sections, theme } = templateData;
+    const banner = brand.banner || "";
+    const logo = brand.logo || "";
+    const accent = theme.accent || "#111827";
+    const text = theme.text || "#111827";
+    const bg = theme.bg || "#ffffff";
+
+    const safe = (s: string) => (s || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const replacePlaceholders = (text: string) => {
+      return text
+        .replace(/\{\{customerName\}\}/g, data.name || 'Valued Customer')
+        .replace(/\{\{serviceName\}\}/g, data.serviceType || 'Service')
+        .replace(/\{\{eventDate\}\}/g, data.eventDate || 'TBD')
+        .replace(/\{\{confirmationCode\}\}/g, data.confirmationCode || '')
+        .replace(/\{\{message\}\}/g, data.message || '');
+    };
+
+    const sectionsHtml = sections
+      .map((s: any) => {
+        if (s.type === "heading") {
+          return `<tr><td style="padding:16px 24px 0"><h1 style="margin:0;font-size:24px;color:${accent}">${safe(replacePlaceholders(s.text))}</h1></td></tr>`;
+        }
+        if (s.type === "text") {
+          return `<tr><td style="padding:8px 24px 0;line-height:1.6">${safe(replacePlaceholders(s.text)).replace(/\n/g, "<br/>")}</td></tr>`;
+        }
+        if (s.type === "cta") {
+          const color = s.color || accent;
+          return `<tr><td style="padding:16px 24px"><a class="btn" href="${safe(s.href)}" style="background:${color};color:#fff" target="_blank">${safe(s.label)}</a></td></tr>`;
+        }
+        if (s.type === "divider") {
+          return `<tr><td style="padding:16px 24px"><hr style="border:none;height:1px;background:#e5e7eb"/></td></tr>`;
+        }
+        if (s.type === "two-col") {
+          return `<tr><td style="padding:12px 24px"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="width:50%;vertical-align:top;padding-right:8px">${safe(replacePlaceholders(s.left))}</td><td style="width:50%;vertical-align:top;padding-left:8px">${safe(replacePlaceholders(s.right))}</td></tr></table></td></tr>`;
+        }
+        return "";
+      })
+      .join("");
+
+    return `<!doctype html>
+      <html>
+      <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <title>${safe(brand.subject || "Kocky's Email")}</title>
+        <style>
+          .btn{display:inline-block;padding:12px 16px;border-radius:10px;text-decoration:none}
+        </style>
+      </head>
+      <body style="margin:0;background:${bg};color:${text};font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${bg}">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%">
+                ${banner ? `<tr><td><img src="${banner}" alt="Banner" style="display:block;width:100%;height:auto;border:0"/></td></tr>` : ""}
+                <tr>
+                  <td style="padding:24px 24px 8px">
+                    <div style="display:flex;align-items:center;gap:12px">
+                      ${logo ? `<img src="${logo}" alt="Logo" width="48" height="48" style="border-radius:12px"/>` : ""}
+                      <div>
+                        <div style="font-weight:700;font-size:18px">${safe(brand.senderName || "Kocky's Bar & Grill")}</div>
+                        <div style="font-size:12px;color:#6b7280">${safe(brand.senderEmail || "info@kockys.com")}</div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                ${sectionsHtml}
+                <tr>
+                  <td style="padding:24px;color:#6b7280;font-size:12px">
+                    <div>${safe(brand.footer || "123 Main St, Fresno CA · (555) 555‑5555")}</div>
+                    <div><a href="#" style="color:#6b7280">Unsubscribe</a></div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>`;
+  }
+
+  /**
+   * Get template data from database or fallback to presets
+   */
+  private async getTemplateData(templateId: string): Promise<any> {
+    // Preset templates (fallback)
+    const presets = {
+      inquiry: {
+        brand: {
+          subject: "Thanks for your inquiry — we got it!",
+          senderName: "Kocky's Bar & Grill",
+          senderEmail: "info@kockys.com",
+          footer: "Kocky's Bar & Grill · 123 Main St, Fresno CA",
+          logo: "",
+          banner: "",
+        },
+        theme: { accent: "#4f46e5", text: "#111827", bg: "#ffffff" },
+        sections: [
+          { type: "heading", text: "We received your inquiry, {{customerName}}!" },
+          { type: "text", text: "Thanks for reaching out about {{serviceName}}. Our team will reply within 1 business day." },
+          { type: "cta", label: "View Menu", href: "https://kockys.com/menu", color: "#4f46e5" },
+          { type: "divider" },
+          { type: "text", text: "Questions? Reply to this email or call (555) 555‑5555." },
+        ],
+      },
+      quote: {
+        brand: {
+          subject: "Your quote from Kocky's (##{{quoteNumber}})",
+          senderName: "Kocky's Sales",
+          senderEmail: "info@kockys.com",
+          footer: "Kocky's · Quotes",
+          logo: "",
+          banner: "",
+        },
+        theme: { accent: "#16a34a", text: "#0f172a", bg: "#ffffff" },
+        sections: [
+          { type: "heading", text: "Your quote is ready" },
+          { type: "two-col", left: "Service: {{serviceName}}\nEvent Date: {{eventDate}}", right: "Total: {{total}}\nValid until: {{validUntil}}" },
+          { type: "cta", label: "Approve & Pay Deposit", href: "https://staging.kockys.com/quotes/{{quoteId}}" },
+          { type: "divider" },
+          { type: "text", text: "If anything looks off, reply and we'll tweak it right away." },
+        ],
+      },
+      mobileBar: {
+        brand: {
+          subject: "Mobile Bar booking received",
+          senderName: "Kocky's Events",
+          senderEmail: "info@kockys.com",
+          footer: "Kocky's · Events",
+          logo: "",
+          banner: "",
+        },
+        theme: { accent: "#ea580c", text: "#1f2937", bg: "#ffffff" },
+        sections: [
+          { type: "heading", text: "Cheers, {{customerName}}!" },
+          { type: "text", text: "Your Mobile Bar request is in. We'll confirm availability and send next steps." },
+          { type: "cta", label: "See Packages", href: "https://staging.kockys.com/mobile-bar" },
+        ],
+      },
+    };
+
+    // TODO: In the future, fetch from database
+    // For now, return preset data
+    return presets[templateId as keyof typeof presets] || presets.inquiry;
+  }
+
+  /**
+   * Send automatic inquiry confirmation using Email Template Studio
    */
   public async sendInquiryConfirmation(data: {
+    name: string;
+    email: string;
+    serviceType: string;
+    eventDate?: string;
+    confirmationCode: string;
+    message: string;
+  }, accountKey?: EmailAccount): Promise<boolean> {
+    try {
+      // Get template data from Email Template Studio
+      const templateData = await this.getTemplateData('inquiry');
+      
+      // Render the template with data
+      const html = this.renderEmailTemplate(templateData, data);
+      
+      // Get subject from template or use default
+      const subject = templateData.brand.subject || "Thanks for your inquiry — we got it!";
+      
+      logger.info(`Sending inquiry confirmation to ${data.email} using Microsoft Graph API`);
+      
+      // Use Microsoft Graph API for transactional emails
+      return await graphEmailService.sendEmail({
+        to: data.email,
+        subject: subject,
+        html,
+      });
+    } catch (error) {
+      logger.error('Error sending inquiry confirmation with Graph API:', error);
+      
+      // Fallback to original template if Azure service fails
+      return this.sendInquiryConfirmationFallback(data, accountKey);
+    }
+  }
+
+  /**
+   * Fallback inquiry confirmation (original template)
+   */
+  private async sendInquiryConfirmationFallback(data: {
     name: string;
     email: string;
     serviceType: string;

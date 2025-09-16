@@ -11,7 +11,7 @@ import { logger } from './utils/logger';
 import { sanitizeMiddleware } from './middleware/sanitize';
 
 // Import routes
-import authRoutes from './routes/auth.routes';
+import authRoutes from './routes/simple-auth.routes';
 import reservationRoutes from './routes/reservation.routes';
 import foodTruckRoutes from './routes/foodtruck.routes';
 import mobileBarRoutes from './routes/mobilebar.routes';
@@ -35,6 +35,9 @@ import enhancedMenuRoutes from './routes/enhanced-menu.routes';
 import unifiedFormsRoutes from './routes/unified-forms.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import jobsRoutes from './routes/jobs.routes';
+import eventsRoutes from './routes/events.routes';
+import emailRoutes from './routes/email';
+import { emailScheduler } from './services/emailScheduler';
 
 // Load environment variables
 dotenv.config();
@@ -52,7 +55,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "http://localhost:*", "https://localhost:*", "http://72.167.227.205:*", "https://staging.kockys.com", "https://api.staging.kockys.com"],
+      imgSrc: ["'self'", "data:", "https://staging.kockys.com", "https://images.unsplash.com"],
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       baseUri: ["'self'"],
@@ -72,13 +75,9 @@ const corsOptions = {
   origin: function (origin: any, callback: any) {
     // Allow requests from these origins
     const allowedOrigins = [
-      'http://72.167.227.205:3003/',  // Frontend on 3003 (local dev)
-      'http://localhost:4000',  // Admin panel on 4000 (local dev) [[memory:7534915]]
-      'http://72.167.227.205:3003',  // Frontend on IP address
-      'http://72.167.227.205:4000',  // Admin panel on IP address
       'https://staging.kockys.com',  // Production Frontend
       'https://staging.kockys.com/admin',  // Production Admin panel
-      'https://api.staging.kockys.com',  // Production API
+      'https://staging.kockys.com/admin',  // Production Admin panel
       process.env.FRONTEND_URL,
       process.env.ADMIN_URL
     ].filter(Boolean);
@@ -153,6 +152,8 @@ app.use('/api/enhanced-menu', enhancedMenuRoutes);
 app.use('/api/unified-forms', unifiedFormsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/jobs', jobsRoutes);
+app.use('/api/events', eventsRoutes);
+app.use('/api/email', emailRoutes);
 
 // Welcome route
 app.get('/api', (req: Request, res: Response) => {
@@ -173,7 +174,8 @@ app.get('/api', (req: Request, res: Response) => {
       settings: '/api/settings',
       forms: '/api/forms',
       crm: '/api/crm',
-      calendar: '/api/calendar'
+      calendar: '/api/calendar',
+      events: '/api/events'
     }
   });
 });
@@ -213,6 +215,9 @@ const startServer = async () => {
     const { initializeHeroSettings } = await import('./hero-settings-db');
     await initializeHeroSettings();
     logger.info('Hero settings initialized');
+
+    // Initialize email scheduler
+    logger.info('Email scheduler initialized');
 
     app.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
       logger.info(`Server is running on 0.0.0.0:${PORT}`);

@@ -1,0 +1,46 @@
+KOCKY'S STAGING SITE - BROWSER TEST URLs
+==========================================
+
+Copy and paste these URLs into your browser to test the fixes:
+
+MAIN SITE:
+http://staging.kockys.com/
+- Should show the main Kocky's Bar & Grill website
+
+ADMIN PANEL (FIXED - NO MORE REDIRECTS):
+http://staging.kockys.com/admin
+- Should load the admin panel directly
+- Should show login form or dashboard (depending on auth status)
+- NO MORE redirect to /dashboard!
+
+DASHBOARD REDIRECT (FIXED):
+http://staging.kockys.com/dashboard
+- Should automatically redirect to /admin
+- Should show "Redirecting to admin panel..." message briefly
+
+API ENDPOINTS:
+http://staging.kockys.com/api/
+- Should show API welcome message
+
+BACKEND HEALTH:
+http://127.0.0.1:5001/health
+- Should show backend health status (if accessing from server)
+
+==========================================
+EXPECTED RESULTS:
+- All URLs should return HTTP 200 (no 404 errors)
+- /admin should load directly without redirects
+- /dashboard should redirect to /admin smoothly
+- No more redirect loops or 404 errors
+- Static assets (CSS/JS) should load properly
+
+==========================================
+If you see any issues, the fixes may need to be applied or services restarted.
+
+
+
+
+
+
+
+

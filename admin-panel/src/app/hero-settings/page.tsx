@@ -13,7 +13,7 @@ const defaultPages: HeroSettings[] = [
     pageName: 'Home',
     pageSlug: '/',
     useLogo: true,
-    logoUrl: '/logo.png',
+    logoUrl: '/kockys-logo.png',
     title: "Welcome to Kocky's",
     subtitle: 'Bar & Grill',
     description: 'Where Great Food Meets Unforgettable Moments'
@@ -23,7 +23,7 @@ const defaultPages: HeroSettings[] = [
     pageName: 'Menu',
     pageSlug: '/menu',
     useLogo: true,
-    logoUrl: '/logo.png',
+    logoUrl: '/kockys-logo.png',
     title: "Our Menu",
     subtitle: 'Delicious Food & Drinks',
     description: 'Discover our amazing selection'
@@ -33,7 +33,7 @@ const defaultPages: HeroSettings[] = [
     pageName: 'Happy Hour',
     pageSlug: '/happy-hour',
     useLogo: true,
-    logoUrl: '/logo.png',
+    logoUrl: '/kockys-logo.png',
     title: 'Happy Hour Specials',
     subtitle: 'Daily 3PM - 6PM',
     description: 'Join us for amazing deals on drinks and appetizers'
@@ -43,7 +43,7 @@ const defaultPages: HeroSettings[] = [
     pageName: 'Weekend Brunch',
     pageSlug: '/brunch',
     useLogo: true,
-    logoUrl: '/logo.png',
+    logoUrl: '/kockys-logo.png',
     title: 'Weekend Brunch',
     subtitle: 'Saturday & Sunday',
     description: 'Join us from 10am - 3pm for the best brunch in town'
@@ -53,7 +53,7 @@ const defaultPages: HeroSettings[] = [
     pageName: 'Mobile Bar',
     pageSlug: '/mobile-bar',
     useLogo: true,
-    logoUrl: '/logo.png',
+    logoUrl: '/kockys-logo.png',
     title: 'Mobile Bar Service',
     subtitle: 'We Come to You',
     description: 'Professional bartending for your special events'
@@ -63,7 +63,7 @@ const defaultPages: HeroSettings[] = [
     pageName: 'Catering',
     pageSlug: '/catering',
     useLogo: true,
-    logoUrl: '/logo.png',
+    logoUrl: '/kockys-logo.png',
     title: 'Catering Services',
     subtitle: 'Events & Parties',
     description: 'Let us cater your next event'
@@ -83,7 +83,7 @@ const defaultPages: HeroSettings[] = [
     pageName: 'Reservations',
     pageSlug: '/reservations',
     useLogo: true,
-    logoUrl: '/logo.png',
+    logoUrl: '/kockys-logo.png',
     title: 'Make a Reservation',
     subtitle: 'Book Your Table',
     description: 'Reserve your spot today'
@@ -93,7 +93,7 @@ const defaultPages: HeroSettings[] = [
     pageName: 'About Us',
     pageSlug: '/about',
     useLogo: true,
-    logoUrl: '/logo.png',
+    logoUrl: '/kockys-logo.png',
     title: "About Kocky's",
     subtitle: 'Our Story',
     description: 'Family owned and operated since 2010'
@@ -161,7 +161,7 @@ export default function HeroSettingsPage() {
       });
       
       // Upload the logo file to backend with authentication
-      const uploadResponse = await fetch(`http://72.167.227.205:5001/api/hero-settings/${pageId}/upload-logo`, {
+      const uploadResponse = await fetch(`/api/hero-settings/${pageId}/upload-logo`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

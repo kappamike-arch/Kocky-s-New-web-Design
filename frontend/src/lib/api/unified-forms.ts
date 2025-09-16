@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://72.167.227.205:5001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export interface UnifiedFormData {
   formType: 'reservation' | 'mobile-bar' | 'food-truck' | 'catering';

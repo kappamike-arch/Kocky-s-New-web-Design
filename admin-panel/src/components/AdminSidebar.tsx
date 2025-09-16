@@ -26,12 +26,14 @@ import {
   BarChart, 
   LogOut, 
   ChevronRight, 
-  ChevronDown,
+  ChevronDown, 
   X,
   Menu,
   ChevronLeft,
   Mail,
-  Inbox
+  Inbox,
+  PartyPopper,
+  Send
 } from 'lucide-react';
 import { auth } from '../lib/api/auth';
 import { handleLogout } from '../lib/utils/logout';
@@ -58,7 +60,7 @@ export default function AdminSidebar() {
         const userData = JSON.parse(atob(token));
         setUser(userData);
       } catch {
-        router.push('/');
+        router.push('/login');
       }
     }
   }, [router]);
@@ -117,17 +119,17 @@ export default function AdminSidebar() {
   };
 
   const menuItems: MenuItem[] = [
-    { name: 'Dashboard', path: '/dashboard', icon: Home },
+    { name: 'Dashboard', path: '/', icon: Home },
     { 
       name: 'Content Management', 
       path: '', 
       icon: Layout,
       children: [
-        { name: 'Page Content', path: '/page-content', icon: Type },
-        { name: 'Hero Settings', path: '/hero-settings', icon: Image },
-        { name: 'Service Settings', path: '/service-settings', icon: Settings },
-        { name: 'Website Content', path: '/content', icon: FileText },
-        { name: 'Media Library', path: '/media', icon: Image },
+        { name: 'Page Content', path: '/page-content/', icon: Type },
+        { name: 'Hero Settings', path: '/hero-settings/', icon: Image },
+        { name: 'Service Settings', path: '/service-settings/', icon: Settings },
+        { name: 'Website Content', path: '/content/', icon: FileText },
+        { name: 'Media Library', path: '/media/', icon: Image },
       ]
     },
     {
@@ -135,16 +137,16 @@ export default function AdminSidebar() {
       path: '',
       icon: Utensils,
       children: [
-        { name: 'Enhanced Menus', path: '/menu-management', icon: MenuIcon },
-        { name: 'Regular Menu', path: '/menu', icon: Coffee },
-        { name: 'Happy Hour', path: '/menu-management?type=HAPPY_HOUR', icon: Wine },
-        { name: 'Brunch Menu', path: '/menu-management?type=BRUNCH', icon: Coffee },
-        { name: 'Specials', path: '/menu-management?type=SPECIALS', icon: Star },
+        { name: 'Enhanced Menus', path: '/menu-management/', icon: MenuIcon },
+        { name: 'Regular Menu', path: '/menu/', icon: Coffee },
+        { name: 'Happy Hour', path: '/menu-management/?type=HAPPY_HOUR', icon: Wine },
+        { name: 'Brunch Menu', path: '/menu-management/?type=BRUNCH', icon: Coffee },
+        { name: 'Specials', path: '/menu-management/?type=SPECIALS', icon: Star },
       ]
     },
     { 
       name: 'Gallery', 
-      path: '/gallery', 
+      path: '/gallery/', 
       icon: ImageIcon 
     },
     {
@@ -152,10 +154,21 @@ export default function AdminSidebar() {
       path: '',
       icon: Briefcase,
       children: [
-        { name: 'CRM', path: '/crm', icon: Briefcase },
-        { name: 'Quotes', path: '/quotes', icon: FileText },
-        { name: 'Quote Config', path: '/quote-config', icon: Package },
-        { name: 'Email Management', path: '/email-management', icon: Mail },
+        { name: 'CRM', path: '/crm/', icon: Briefcase },
+        { name: 'Quotes', path: '/quotes/', icon: FileText },
+        { name: 'Quote Config', path: '/quote-config/', icon: Package },
+      ]
+    },
+    {
+      name: 'Email Marketing',
+      path: '',
+      icon: Mail,
+      children: [
+        { name: 'Overview', path: '/email/', icon: Mail },
+        { name: 'Contacts', path: '/email/contacts/', icon: Users },
+        { name: 'Templates', path: '/email-templates/', icon: FileText },
+        { name: 'Template Studio', path: '/email-studio/inquiry', icon: Layout },
+        { name: 'Campaigns', path: '/email/campaigns/', icon: Send },
       ]
     },
     {
@@ -163,17 +176,18 @@ export default function AdminSidebar() {
       path: '',
       icon: Wine,
       children: [
-        { name: 'Reservations', path: '/reservations', icon: Calendar },
-        { name: 'Orders', path: '/orders', icon: ShoppingBag },
-        { name: 'Food Truck', path: '/food-truck', icon: Truck },
-        { name: 'Mobile Bar', path: '/mobile-bar', icon: Wine },
+        { name: 'Reservations', path: '/reservations/', icon: Calendar },
+        { name: 'Orders', path: '/orders/', icon: ShoppingBag },
+        { name: 'Food Truck', path: '/food-truck/', icon: Truck },
+        { name: 'Mobile Bar', path: '/mobile-bar/', icon: Wine },
+        { name: 'Events', path: '/events/', icon: PartyPopper },
       ]
     },
-    { name: 'Calendar', path: '/calendar', icon: CalendarDays },
-    { name: 'Job Applications', path: '/jobs', icon: Briefcase },
-    { name: 'Users', path: '/users', icon: Users },
-    { name: 'Analytics', path: '/analytics', icon: BarChart },
-    { name: 'Settings', path: '/settings', icon: Settings },
+    { name: 'Calendar', path: '/calendar/', icon: CalendarDays },
+    { name: 'Job Applications', path: '/jobs/', icon: Briefcase },
+    { name: 'Users', path: '/users/', icon: Users },
+    { name: 'Analytics', path: '/analytics/', icon: BarChart },
+    { name: 'Settings', path: '/settings/', icon: Settings },
   ];
 
   const renderMenuItem = (item: MenuItem, depth = 0) => {
@@ -226,7 +240,7 @@ export default function AdminSidebar() {
   };
 
   // Don't show sidebar on login page
-  if (pathname === '/') return null;
+  if (pathname === '/login') return null;
 
   return (
     <>

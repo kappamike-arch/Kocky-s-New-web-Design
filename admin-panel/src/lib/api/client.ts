@@ -1,13 +1,12 @@
 import axios from 'axios';
+import { API_URL } from '@/config/api';
 const Cookies = require('js-cookie');
 
-// API URLs - Force IP addresses until DNS propagation is complete
-const API_BASE_URL = 'http://72.167.227.205:5001/api';
-const CMS_BASE_URL = 'http://72.167.227.205:3003/admin/api/graphql';
+const CMS_BASE_URL = process.env.NEXT_PUBLIC_CMS_URL || null;
 
 // Create axios instance for backend API
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -16,6 +15,7 @@ export const api = axios.create({
 
 // Add auth token to requests if available
 api.interceptors.request.use((config) => {
+  console.log('API Request:', config.baseURL + config.url);
   const token = Cookies.get('auth-token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

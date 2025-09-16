@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // API base (should include /api) and media origin (no /api)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://72.167.227.205:5001/api';
-const MEDIA_ORIGIN = API_BASE_URL.replace(/\/?api$/, '');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+const MEDIA_ORIGIN = process.env.NEXT_PUBLIC_MEDIA_URL || '';
 
 export interface PageContent {
   id: string;

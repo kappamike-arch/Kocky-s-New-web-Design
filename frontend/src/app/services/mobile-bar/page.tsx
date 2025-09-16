@@ -63,7 +63,7 @@ export default function MobileBarPage() {
         // Load hero settings
         const heroSettings = await getHeroSettingsAsync('mobile');
         if (heroSettings) {
-          const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL || 'http://72.167.227.205:5001/uploads';
+          const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL || 'https://staging.kockys.com/uploads';
           setHeroData({
             title: heroSettings.useLogo ? '' : (heroSettings.title || 'Mobile Bar Service'),
             subtitle: heroSettings.subtitle || 'We Come to You',
@@ -75,7 +75,7 @@ export default function MobileBarPage() {
         }
 
         // Load service settings
-        const response = await fetch('http://72.167.227.205:5001/api/services/mobile-bar');
+        const response = await fetch('/api/services/mobile-bar');
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data) {

@@ -328,7 +328,7 @@ app.get('/api', (req: Request, res: Response) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
   console.log(`Backend server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`API available at: http://localhost:${PORT}/api`);

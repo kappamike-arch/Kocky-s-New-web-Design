@@ -15,7 +15,8 @@ import {
   ShoppingCart,
   Calendar,
   Truck,
-  Wine
+  Wine,
+  PartyPopper
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -27,6 +28,7 @@ const navigation = [
   { name: 'Happy Hour', href: '/happy-hour' },
   { name: 'Brunch', href: '/brunch' },
   { name: 'Gallery', href: '/gallery' },
+  { name: 'Events', href: '/events' },
   { name: 'Reservations', href: '/reservations' },
   {
     name: 'Services',

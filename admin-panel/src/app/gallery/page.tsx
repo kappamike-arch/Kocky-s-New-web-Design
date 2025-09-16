@@ -118,7 +118,7 @@ function SortableImageItem({ image, onEdit, onToggle, onDelete }: {
       {/* Image */}
       <div className="aspect-square bg-gray-900">
         <img
-          src={`http://72.167.227.205:5001${image.thumbnailUrl || image.imageUrl}`}
+          src={`${image.thumbnailUrl || image.imageUrl}`}
           alt={image.title || 'Gallery image'}
           className="w-full h-full object-cover"
         />
@@ -191,7 +191,7 @@ export default function GalleryPage() {
   // Fetch images
   const fetchImages = useCallback(async () => {
     try {
-      const apiUrl = `http://72.167.227.205:5001/api/gallery/items`;
+      const apiUrl = `/api/gallery/items`;
       console.log('🔍 Admin Gallery: Fetching from:', apiUrl);
       console.log('🔍 Config BACKEND_API_URL was:', BACKEND_API_URL);
       
@@ -307,7 +307,7 @@ export default function GalleryPage() {
     });
 
     try {
-      const uploadUrl = `http://72.167.227.205:5001/api/gallery/bulk-upload`;
+      const uploadUrl = `/api/gallery/bulk-upload`;
       console.log('🚀 Making upload request to:', uploadUrl);
       console.log('🔑 Using token:', token.substring(0, 20) + '...');
       
@@ -366,7 +366,7 @@ export default function GalleryPage() {
     }
 
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/gallery/items/${editingImage.id}`, {
+      const response = await fetch(`/api/gallery/items/${editingImage.id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -411,7 +411,7 @@ export default function GalleryPage() {
     }
 
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/gallery/items/${id}/toggle-status`, {
+      const response = await fetch(`/api/gallery/items/${id}/toggle-status`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
@@ -453,7 +453,7 @@ export default function GalleryPage() {
     }
 
     try {
-      const response = await fetch(`http://72.167.227.205:5001/api/gallery/items/${deleteImageId}`, {
+      const response = await fetch(`/api/gallery/items/${deleteImageId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -820,7 +820,7 @@ export default function GalleryPage() {
             <div className="space-y-4">
                               <div className="aspect-video bg-gray-800 rounded overflow-hidden">
                   <img
-                    src={`http://72.167.227.205:5001${editingImage.imageUrl}`}
+                    src={`${editingImage.imageUrl}`}
                     alt={editingImage.title || 'Gallery image'}
                     className="w-full h-full object-contain"
                   />
