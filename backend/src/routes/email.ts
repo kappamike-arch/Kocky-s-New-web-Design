@@ -1,10 +1,17 @@
 import express from 'express';
+import { UPLOADS_URL } from '@/lib/config';
 import multer from 'multer';
+import { UPLOADS_URL } from '@/lib/config';
 import { PrismaClient } from '@prisma/client';
+import { UPLOADS_URL } from '@/lib/config';
 import { mailer } from '../lib/mailer';
+import { UPLOADS_URL } from '@/lib/config';
 import { compileMJML, replaceTemplateVariables, generateUnsubscribeFooter } from '../lib/mjml';
+import { UPLOADS_URL } from '@/lib/config';
 import { authenticate } from '../middleware/auth';
+import { UPLOADS_URL } from '@/lib/config';
 // import pLimit from 'p-limit'; // Temporarily disabled due to ES module issues
+import { UPLOADS_URL } from '@/lib/config';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -676,7 +683,7 @@ router.post('/campaigns/:id/send-now', authenticate, async (req, res) => {
             }, {
               contactId: contact.id,
               campaignId: campaign.id,
-              baseUrl: process.env.BACKEND_PUBLIC_URL || 'http://72.167.227.205:5001'
+              baseUrl: process.env.BACKEND_PUBLIC_URL || '${UPLOADS_URL}'
             });
 
             if (success) sentCount++;

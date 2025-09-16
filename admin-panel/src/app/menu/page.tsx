@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { UPLOADS_URL } from '@/lib/config';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { UPLOADS_URL } from '@/lib/config';
 import { menu } from '@/lib/api/menu';
 import {
   Plus, Edit, Trash2, Image, Star, DollarSign, Clock,
   Search, Filter, Upload, X, Check, AlertCircle, Coffee
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { UPLOADS_URL } from '@/lib/config';
 
 export default function MenuManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -319,7 +322,7 @@ export default function MenuManagementPage() {
                         {item.imageUrl ? (
                           <img
                             src={item.imageUrl.startsWith('http') || item.imageUrl.startsWith('/uploads') 
-                              ? `http://72.167.227.205:5001${item.imageUrl}` 
+                              ? `${UPLOADS_URL}${item.imageUrl}` 
                               : item.imageUrl}
                             alt={item.name}
                             className="w-full h-full object-cover"

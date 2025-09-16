@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { UPLOADS_URL } from '@/lib/config';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -418,7 +419,7 @@ export default function JobApplicationsPage() {
                   {settings?.heroImage && (
                     <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
                       <img
-                        src={`http://72.167.227.205:5001${settings.heroImage}`}
+                        src={`${UPLOADS_URL}${settings.heroImage}`}
                         alt="Hero Image"
                         className="w-full h-full object-cover"
                       />

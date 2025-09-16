@@ -1,3 +1,4 @@
+import { UPLOADS_URL } from '@/lib/config';
 const { PrismaClient, MenuCategory, MenuType } = require('@prisma/client');
 
 const prisma = new PrismaClient();
@@ -179,7 +180,7 @@ async function fixBrunchSync() {
     console.log('\n🎯 Brunch sync fix completed successfully!');
     console.log('📝 Next steps:');
     console.log('  1. Restart the backend server: pm2 restart kockys-backend');
-    console.log('  2. Test the API: curl http://72.167.227.205:5001/api/menu/brunch');
+    console.log('  2. Test the API: curl ${UPLOADS_URL}/api/menu/brunch');
     console.log('  3. Check the frontend: http://72.167.227.205:3003/brunch');
     console.log('  4. Check the admin panel: http://72.167.227.205:4000/menu-management?type=BRUNCH');
     

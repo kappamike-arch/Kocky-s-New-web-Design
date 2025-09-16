@@ -1,86 +1,72 @@
-import axios from "axios";
-import { API_URL, API_BASE } from '@/config/api';
+/**
+ * Centralized API Client for Admin Panel
+ * Provides axios instance with proper configuration and error handling
+ */
 
-export { API_BASE };
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { API_URL, IS_DEVELOPMENT } from './config';
 
-export const api = axios.create({
+// Create axios instance with base configuration
+export const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 30000, // 30 second timeout
 });
 
-api.interceptors.request.use((cfg) => {
-  // Try multiple token sources for compatibility
-  let token = null;
-  
-  // Try localStorage first
-  if (typeof window !== 'undefined') {
-    token = localStorage.getItem("access_token") || 
-            localStorage.getItem("auth-token") ||
-            localStorage.getItem("token");
-  }
-  
-  // Try sessionStorage as fallback
-  if (!token && typeof window !== 'undefined') {
-    token = sessionStorage.getItem("access_token") || 
-            sessionStorage.getItem("auth-token") ||
-            sessionStorage.getItem("token");
-  }
-  
-  // Try cookies as last resort
-  if (!token && typeof document !== 'undefined') {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'auth-token' || name === 'access_token' || name === 'token') {
-        token = value;
-        break;
+// Request interceptor for logging and auth
+api.interceptors.request.use(
+  (config) => {
+    if (IS_DEVELOPMENT) {
+      console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    }
+    
+    // Add auth token if available
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth-token') || 
+                   document.cookie.split('; ').find(row => row.startsWith('auth-token='))?.split('=')[1];
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
     }
+    
+    return config;
+  },
+  (error) => {
+    if (IS_DEVELOPMENT) {
+      console.error('🚨 API Request Error:', error);
+    }
+    return Promise.reject(error);
   }
-  
-  if (token) {
-    cfg.headers.Authorization = `Bearer ${token}`;
-  }
-  
-  console.log('API Request:', cfg.method?.toUpperCase(), cfg.url, {
-    hasAuth: !!token,
-    tokenSource: token ? 'found' : 'none',
-    baseURL: cfg.baseURL
-  });
-  
-  return cfg;
-});
+);
 
+// Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => {
-    console.log('API Response:', response.status, response.config.url);
+  (response: AxiosResponse) => {
+    if (IS_DEVELOPMENT) {
+      console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+    }
     return response;
   },
   (error) => {
-    console.error('API Error:', error.response?.status, error.config?.url, error.response?.data);
+    if (IS_DEVELOPMENT) {
+      console.error('🚨 API Response Error:', {
+        status: error.response?.status,
+        url: error.config?.url,
+        message: error.message,
+        data: error.response?.data
+      });
+    }
     
+    // Handle specific error cases
     if (error.response?.status === 401) {
-      console.warn('Authentication failed - clearing tokens and redirecting to login');
-      
-      // Clear all possible token locations
+      // Unauthorized - clear token and redirect to login
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('access_token');
         localStorage.removeItem('auth-token');
-        localStorage.removeItem('token');
-        sessionStorage.removeItem('access_token');
-        sessionStorage.removeItem('auth-token');
-        sessionStorage.removeItem('token');
-      }
-      
-      if (typeof document !== 'undefined') {
         document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      }
-      
-      // Redirect to login page
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        window.location.href = '/';
+        window.location.href = '/login';
       }
     }
     
@@ -88,4 +74,28 @@ api.interceptors.response.use(
   }
 );
 
+// Helper functions for common API operations
+export const apiHelpers = {
+  // GET request
+  get: <T = any>(url: string, config?: AxiosRequestConfig) => 
+    api.get<T>(url, config).then(res => res.data),
+  
+  // POST request
+  post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => 
+    api.post<T>(url, data, config).then(res => res.data),
+  
+  // PUT request
+  put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => 
+    api.put<T>(url, data, config).then(res => res.data),
+  
+  // PATCH request
+  patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => 
+    api.patch<T>(url, data, config).then(res => res.data),
+  
+  // DELETE request
+  delete: <T = any>(url: string, config?: AxiosRequestConfig) => 
+    api.delete<T>(url, config).then(res => res.data),
+};
+
+// Export the configured axios instance as default
 export default api;

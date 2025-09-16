@@ -3,6 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, Image, Video, Trash2, CheckCircle, AlertCircle, X, FileUp, Eye, RefreshCw, Edit3, Save, Settings, Monitor } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { api } from '@/lib/api';
+import { UPLOADS_URL } from '@/lib/config';
 const Cookies = require('js-cookie');
 
 const HERO_SECTIONS = [
@@ -124,12 +126,12 @@ export default function MediaManagementPage() {
 
         // Check for existing image
         try {
-          const imageResponse = await fetch(`http://72.167.227.205:5001${section.imagePath}`, { method: 'HEAD' });
+          const imageResponse = await fetch(`${UPLOADS_URL}${section.imagePath}`, { method: 'HEAD' });
           if (imageResponse.ok) {
             setUploadedFiles(prev => ({
               ...prev,
               [`${section.id}-image`]: { 
-                url: `http://72.167.227.205:5001${section.imagePath}`,
+                url: `${UPLOADS_URL}${section.imagePath}`,
                 timestamp: Date.now()
               }
             }));
@@ -140,12 +142,12 @@ export default function MediaManagementPage() {
 
         // Check for existing video
         try {
-          const videoResponse = await fetch(`http://72.167.227.205:5001${section.videoPath}`, { method: 'HEAD' });
+          const videoResponse = await fetch(`${UPLOADS_URL}${section.videoPath}`, { method: 'HEAD' });
           if (videoResponse.ok) {
             setUploadedFiles(prev => ({
               ...prev,
               [`${section.id}-video`]: { 
-                url: `http://72.167.227.205:5001${section.videoPath}`,
+                url: `${UPLOADS_URL}${section.videoPath}`,
                 timestamp: Date.now()
               }
             }));
@@ -215,14 +217,14 @@ export default function MediaManagementPage() {
         // Use backend API for video uploads
         const { heroSettingsAPI } = await import('../../lib/api/hero-settings');
         const result = await heroSettingsAPI.uploadVideo(sectionId, file);
-        fileUrl = `http://72.167.227.205:5001${result.videoUrl}`;
+        fileUrl = `${UPLOADS_URL}${result.videoUrl}`;
       } else {
         // Use backend API for image uploads (same as videos)
         const { heroSettingsAPI } = await import('../../lib/api/hero-settings');
         console.log(`🖼️ Uploading image for ${sectionId}:`, file.name, file.type, file.size);
         const result = await heroSettingsAPI.uploadImage(sectionId, file);
         console.log(`✅ Image upload result for ${sectionId}:`, result);
-        fileUrl = `http://72.167.227.205:5001${result.imageUrl}`;
+        fileUrl = `${UPLOADS_URL}${result.imageUrl}`;
       }
       
       // Update uploaded files with the new file URL

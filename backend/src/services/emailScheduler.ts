@@ -1,8 +1,13 @@
 import cron from 'node-cron';
+import { UPLOADS_URL } from '@/lib/config';
 import { PrismaClient } from '@prisma/client';
+import { UPLOADS_URL } from '@/lib/config';
 import { mailer } from '../lib/mailer';
+import { UPLOADS_URL } from '@/lib/config';
 import { compileMJML, replaceTemplateVariables } from '../lib/mjml';
+import { UPLOADS_URL } from '@/lib/config';
 // import pLimit from 'p-limit'; // Temporarily disabled due to ES module issues
+import { UPLOADS_URL } from '@/lib/config';
 
 const prisma = new PrismaClient();
 
@@ -132,7 +137,7 @@ class EmailScheduler {
               }, {
                 contactId: contact.id,
                 campaignId: campaign.id,
-                baseUrl: process.env.BACKEND_PUBLIC_URL || 'http://72.167.227.205:5001'
+                baseUrl: process.env.BACKEND_PUBLIC_URL || '${UPLOADS_URL}'
               });
 
               if (success) {

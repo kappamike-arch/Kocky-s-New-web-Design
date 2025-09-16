@@ -6,39 +6,35 @@ const nextConfig = {
   },
   images: {
     remotePatterns: [
+      // External image sources
       {
-        protocol: 'http',
+        protocol: 'https',
         hostname: 'images.unsplash.com',
       },
       {
-        protocol: 'http',
+        protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       },
       {
-        protocol: 'http',
+        protocol: 'https',
         hostname: 'avatars.githubusercontent.com',
       },
+      // Staging environment images
       {
-        protocol: 'http',
+        protocol: 'https',
         hostname: 'staging.kockys.com',
-        port: '',
         pathname: '/uploads/**',
       },
+      // Production environment images (for future use)
       {
-        protocol: 'http',
-        hostname: 'staging.kockys.com',
-        port: '5001',
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'http',
-        hostname: 'staging.kockys.com',
-        port: '',
+        protocol: 'https',
+        hostname: 'kockys.com',
         pathname: '/uploads/**',
       },
     ],
   },
   env: {
+    // Legacy environment variables (deprecated - use centralized config)
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://staging.kockys.com/api',
     NEXT_PUBLIC_MEDIA_URL: process.env.NEXT_PUBLIC_MEDIA_URL || '/uploads',
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,

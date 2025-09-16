@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { UPLOADS_URL } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 import { Plus, Edit, Trash2, Eye, EyeOff, Calendar, MapPin, Users, Clock } from 'lucide-react';
+import { UPLOADS_URL } from '@/lib/config';
 import { getEvents, deleteEvent, toggleEventPublish, type Event } from '../../lib/api/events';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
@@ -141,7 +143,7 @@ export default function EventsPage() {
                 {event.heroImageUrl && (
                   <div className="mb-4">
                     <img 
-                      src={`http://72.167.227.205:5001${event.heroImageUrl}`}
+                      src={`${UPLOADS_URL}${event.heroImageUrl}`}
                       alt={event.title}
                       className="w-full h-48 object-cover rounded-lg"
                     />

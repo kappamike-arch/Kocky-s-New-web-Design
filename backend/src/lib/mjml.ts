@@ -1,4 +1,5 @@
 import mjml from 'mjml';
+import { UPLOADS_URL } from '@/lib/config';
 
 export interface MJMLOptions {
   minify?: boolean;
@@ -85,7 +86,7 @@ export function replaceTemplateVariables(mjmlContent: string, variables: Record<
  * Generate a simple tracking pixel MJML component
  */
 export function generateTrackingPixel(contactId: string, campaignId?: string, baseUrl?: string): string {
-  const url = baseUrl || process.env.BACKEND_PUBLIC_URL || 'http://72.167.227.205:5001';
+  const url = baseUrl || process.env.BACKEND_PUBLIC_URL || '${UPLOADS_URL}';
   const campaignParam = campaignId ? `&cmp=${campaignId}` : '';
   
   return `
@@ -109,7 +110,7 @@ export function generateTrackingLink(
   campaignId?: string, 
   baseUrl?: string
 ): string {
-  const trackingBaseUrl = baseUrl || process.env.BACKEND_PUBLIC_URL || 'http://72.167.227.205:5001';
+  const trackingBaseUrl = baseUrl || process.env.BACKEND_PUBLIC_URL || '${UPLOADS_URL}';
   const campaignParam = campaignId ? `&cmp=${campaignId}` : '';
   const encodedUrl = Buffer.from(url).toString('base64url');
   const trackingUrl = `${trackingBaseUrl}/api/email/track/click?cid=${contactId}${campaignParam}&u=${encodedUrl}`;
