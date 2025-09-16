@@ -156,7 +156,7 @@ export function wrapInMJMLTemplate(content: string, title?: string): string {
  * Generate unsubscribe footer
  */
 export function generateUnsubscribeFooter(contactId: string, baseUrl?: string): string {
-  const url = baseUrl || process.env.SITE_PUBLIC_URL || 'http://72.167.227.205:3003';
+  const url = baseUrl || process.env.PUBLIC_BASE_URL || 'https://staging.kockys.com';
   
   return `
     <mj-section padding="20px 0">

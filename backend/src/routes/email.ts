@@ -676,7 +676,7 @@ router.post('/campaigns/:id/send-now', authenticate, async (req, res) => {
             }, {
               contactId: contact.id,
               campaignId: campaign.id,
-              baseUrl: process.env.BACKEND_PUBLIC_URL || 'http://72.167.227.205:5001'
+              baseUrl: process.env.PUBLIC_BASE_URL || 'https://staging.kockys.com'
             });
 
             if (success) sentCount++;

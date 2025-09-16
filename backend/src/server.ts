@@ -49,6 +49,12 @@ export const prisma = new PrismaClient();
 const app: Application = express();
 const PORT = process.env.PORT || 5001;
 
+// Production configuration
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://staging.kockys.com';
+
+// Helper to build absolute file URLs (use when persisting new files)
+export const fileUrl = (p: string) => `${PUBLIC_BASE_URL}${p.startsWith('/') ? p : '/' + p}`;
+
 // Security middleware with customized settings for uploads
 app.use(helmet({
   crossOriginResourcePolicy: false, // Allow cross-origin access for uploads
@@ -70,29 +76,12 @@ app.use(helmet({
 }));
 app.use(compression());
 
-// CORS configuration
+// CORS configuration - strict for production
 const corsOptions = {
-  origin: function (origin: any, callback: any) {
-    // Allow requests from these origins
-    const allowedOrigins = [
-      'https://staging.kockys.com',  // Production Frontend
-      'https://staging.kockys.com/admin',  // Production Admin panel
-      'https://staging.kockys.com/admin',  // Production Admin panel
-      process.env.FRONTEND_URL,
-      process.env.ADMIN_URL
-    ].filter(Boolean);
-    
-    // Allow requests with no origin (like mobile apps or Postman)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(null, true); // Allow all origins in development
-    }
-  },
+  origin: ['https://staging.kockys.com'],
   credentials: true,
-  optionsSuccessStatus: 200
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
 
@@ -105,18 +94,24 @@ app.use(cors(corsOptions));
 // });
 // app.use('/api/', limiter);
 
-// Body parsing middleware with increased limits for video uploads
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+// Body limits to 10 MB
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Input sanitization middleware to prevent XSS attacks
 app.use(sanitizeMiddleware);
 
-// Serve static files from public_html/uploads (logos, videos, etc.)
-app.use('/uploads', express.static('/home/stagingkockys/public_html/uploads'));
+// Serve static uploads with caching
+app.use('/uploads', express.static('/home/stagingkockys/public_html/uploads', {
+  maxAge: '365d',
+  immutable: true
+}));
 
 // Legacy video files support (redirect to uploads/videos)
-app.use('/videos', express.static('/home/stagingkockys/public_html/uploads/videos'));
+app.use('/videos', express.static('/home/stagingkockys/public_html/uploads/videos', {
+  maxAge: '365d',
+  immutable: true
+}));
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
