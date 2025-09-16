@@ -43,6 +43,16 @@ module.exports = {
         PORT: 3003,
         NEXT_PUBLIC_API_URL: 'https://staging.kockys.com/api'
       }
+    },
+    {
+      name: 'kockys-prisma-studio',
+      script: 'npx',
+      args: 'prisma studio --port 5555 --hostname 0.0.0.0',
+      cwd: '/home/stagingkockys/public_html/current/backend',
+      env: {
+        NODE_ENV: 'production',
+        DATABASE_URL: 'file:/home/stagingkockys/public_html/current/backend/prisma/dev.db'
+      }
     }
   ]
 };

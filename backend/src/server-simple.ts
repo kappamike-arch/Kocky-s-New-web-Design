@@ -331,5 +331,5 @@ app.get('/api', (req: Request, res: Response) => {
 app.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
   console.log(`Backend server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
-  console.log(`API available at: http://localhost:${PORT}/api`);
+  console.log(`API available at: http://staging.kockys.com:${PORT}/api`);
 });

@@ -9,7 +9,7 @@ const isStaging = process.env.NEXT_PUBLIC_ENV === "staging" || process.env.NODE_
 
 // API Base URL configuration
 const API_BASE_URL = isStaging
-  ? "http://staging.kockys.com"
+  ? "https://staging.kockys.com"
   : "https://api.kockys.com";
 
 // Full API URL with /api path

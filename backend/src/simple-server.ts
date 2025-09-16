@@ -21,7 +21,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "http://localhost:*", "https://localhost:*", "http://72.167.227.205:*", "https://staging.kockys.com", "https://api.staging.kockys.com"],
+      imgSrc: ["'self'", "data:", "http://staging.kockys.com:*", "https://staging.kockys.com:*", "http://72.167.227.205:*", "https://staging.kockys.com", "https://api.staging.kockys.com"],
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       baseUri: ["'self'"],
@@ -41,7 +41,7 @@ const corsOptions = {
   origin: function (origin: any, callback: any) {
     const allowedOrigins = [
       'http://72.167.227.205:3003',
-      'http://localhost:4000',
+      'http://staging.kockys.com/admin',
       'http://72.167.227.205:4000',
       'https://staging.kockys.com',
       'https://staging.kockys.com/admin',
