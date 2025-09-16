@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UPLOADS_URL } from '@/lib/config';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Eye, EyeOff, Upload, X, Copy, ExternalLink } from 'lucide-react';
-import { UPLOADS_URL } from '@/lib/config';
 import { getEvent, updateEvent, uploadEventImage, uploadEventVideo, type Event, type CreateEventData } from '../../../lib/api/events';
+import { PUBLIC_BASE_URL, API_URL } from '../../../lib/config';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Input } from '../../../components/ui/input';
@@ -75,7 +74,7 @@ export default function EditEventPage() {
 
       // Set existing image preview
       if (eventData.heroImageUrl) {
-        setHeroImagePreview(`${UPLOADS_URL}${eventData.heroImageUrl}`);
+        setHeroImagePreview(`http://72.167.227.205:5001${eventData.heroImageUrl}`);
       }
     } catch (error) {
       console.error('Failed to fetch event:', error);
@@ -159,12 +158,12 @@ export default function EditEventPage() {
 
   const getPublicEventUrl = () => {
     if (!event) return '';
-    return `http://72.167.227.205:3003/events/${event.slug}`;
+    return `${PUBLIC_BASE_URL}/events/${event.slug}`;
   };
 
   const getICSUrl = () => {
     if (!event) return '';
-    return `${UPLOADS_URL}/api/events/${event.id}/ics`;
+    return `${API_URL}/events/${event.id}/ics`;
   };
 
   if (loading) {
