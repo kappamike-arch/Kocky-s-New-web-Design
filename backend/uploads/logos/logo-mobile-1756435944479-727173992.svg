@@ -1,0 +1,6 @@
+<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="100" fill="#1a1a1a"/>
+  <text x="100" y="35" font-family="Arial, sans-serif" font-size="16" fill="#ffffff" text-anchor="middle">MOBILE BAR</text>
+  <text x="100" y="55" font-family="Arial, sans-serif" font-size="12" fill="#ff6b35" text-anchor="middle">SERVICE</text>
+  <text x="100" y="75" font-family="Arial, sans-serif" font-size="10" fill="#ffffff" text-anchor="middle">We Come to You</text>
+</svg>

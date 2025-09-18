@@ -58,7 +58,7 @@ export function HeroSection({
   overlayOpacity = 0.5,
   height = 'large',
   showLogo = false,
-          logoUrl = '/kockys-logo.png?v=1756432883',
+  logoUrl = '/kockys-logo.png?v=1756432883',
   ctaButtons = [],
   isAdmin = false,
   onEdit,
@@ -73,6 +73,7 @@ export function HeroSection({
   const [showOpacitySlider, setShowOpacitySlider] = useState(false);
   const [localOpacity, setLocalOpacity] = useState(overlayOpacity);
   const [videoError, setVideoError] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -89,13 +90,19 @@ export function HeroSection({
 
   useEffect(() => {
     // Auto-play video when component mounts or video source changes
-    if (videoRef.current && backgroundVideo && !videoError) {
-      videoRef.current.play().catch(err => {
-        console.error('Video autoplay failed:', err);
-        setIsVideoPlaying(false);
-      });
+    if (videoRef.current && backgroundVideo && !videoError && videoLoaded) {
+      const playPromise = videoRef.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.error('Video autoplay failed:', err);
+          setIsVideoPlaying(false);
+          // If autoplay fails, gracefully fall back to showing the video as paused
+          // The user can still manually play it using the controls
+        });
+      }
     }
-  }, [backgroundVideo, videoError]);
+  }, [backgroundVideo, videoError, videoLoaded]);
 
   const heightClasses = {
     small: 'h-[40vh]',
@@ -109,9 +116,13 @@ export function HeroSection({
       if (isVideoPlaying) {
         videoRef.current.pause();
       } else {
-        videoRef.current.play().catch(err => {
-          console.error('Video play failed:', err);
-        });
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(err => {
+            console.error('Video play failed:', err);
+            setIsVideoPlaying(false);
+          });
+        }
       }
       setIsVideoPlaying(!isVideoPlaying);
     }
@@ -135,6 +146,13 @@ export function HeroSection({
   const handleVideoError = () => {
     console.error('Video failed to load');
     setVideoError(true);
+    setVideoLoaded(false);
+  };
+
+  const handleVideoLoad = () => {
+    console.log('Video loaded successfully');
+    setVideoLoaded(true);
+    setVideoError(false);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,6 +165,7 @@ export function HeroSection({
       if (isVideo && onUploadVideo) {
         await onUploadVideo(file);
         setVideoError(false); // Reset error state on new upload
+        setVideoLoaded(false); // Reset loaded state
       } else if (!isVideo && onUploadImage) {
         await onUploadImage(file);
       }
@@ -160,6 +179,10 @@ export function HeroSection({
     }
   };
 
+  // Determine what to show as background
+  const shouldShowVideo = backgroundVideo && !videoError && videoLoaded;
+  const shouldShowImage = !shouldShowVideo && backgroundImage;
+
   return (
     <section
       className={cn(
@@ -170,7 +193,7 @@ export function HeroSection({
     >
       {/* Background Media Layer (z-0) */}
       <div className="absolute inset-0 z-0">
-        {backgroundVideo && !videoError ? (
+        {shouldShowVideo ? (
           <video
             ref={videoRef}
             key={backgroundVideo} // Force re-render when source changes
@@ -179,6 +202,8 @@ export function HeroSection({
             muted={isMuted}
             playsInline
             onError={handleVideoError}
+            onLoadedData={handleVideoLoad}
+            onCanPlay={handleVideoLoad}
             className="absolute inset-0 w-full h-full object-cover"
             style={{ zIndex: 0 }}
           >
@@ -186,7 +211,7 @@ export function HeroSection({
             <source src={backgroundVideo.replace('.mp4', '.webm')} type="video/webm" />
             Your browser does not support the video tag.
           </video>
-        ) : backgroundImage ? (
+        ) : shouldShowImage ? (
           <Image
             src={backgroundImage}
             alt="Hero background"
@@ -210,7 +235,7 @@ export function HeroSection({
       />
 
       {/* Video Controls (z-20) */}
-      {backgroundVideo && !videoError && (
+      {shouldShowVideo && (
         <div className="absolute bottom-4 right-4 z-20 flex gap-2">
           <Button
             size="icon"

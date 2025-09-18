@@ -1,0 +1,67 @@
+// Add these models to your existing schema.prisma file
+
+// Quote Configuration Models
+model QuotePackage {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String   // FOOD_TRUCK, MOBILE_BAR, CATERING
+  price       Decimal
+  priceType   String   @default("FLAT") // FLAT, PER_PERSON, PER_HOUR
+  items       String?  // JSON array of included items
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model QuoteItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String   // FOOD, BEVERAGE, RENTAL, ADDON, EQUIPMENT
+  unitPrice   Decimal
+  unit        String   @default("EACH") // EACH, DOZEN, CASE, HOUR, DAY
+  taxable     Boolean  @default(true)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model QuoteLabor {
+  id          String   @id @default(cuid())
+  role        String   // Chef, Bartender, Server, Coordinator
+  description String?
+  rateType    String   @default("HOURLY") // HOURLY, FLAT, EVENT
+  rate        Decimal
+  minHours    Decimal? @default(4)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model QuoteTax {
+  id          String   @id @default(cuid())
+  name        String   // Sales Tax, Service Tax, etc.
+  rate        Decimal  // Percentage
+  description String?
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model QuoteGratuity {
+  id            String   @id @default(cuid())
+  name          String   // Standard Gratuity, Large Party, etc.
+  percentage    Decimal
+  minGuestCount Int?     // Minimum guests for auto-apply
+  isAutoApply   Boolean  @default(false)
+  isDefault     Boolean  @default(false)
+  description   String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

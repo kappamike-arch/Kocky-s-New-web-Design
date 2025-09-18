@@ -1,0 +1,6 @@
+<svg width="300" height="150" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="150" fill="#DC2626" rx="10"/>
+    <text x="150" y="60" font-family="Arial Black" font-size="36" fill="white" text-anchor="middle" font-weight="bold">KOCKY'S</text>
+    <text x="150" y="90" font-family="Arial" font-size="18" fill="#FCD34D" text-anchor="middle">BAR & GRILL</text>
+    <text x="150" y="120" font-family="Arial" font-size="14" fill="white" text-anchor="middle">EST. 2010</text>
+</svg>

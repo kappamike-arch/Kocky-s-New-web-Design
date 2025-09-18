@@ -1,0 +1,108 @@
+import { api } from './client';
+
+export interface HeroSettings {
+  id: string;
+  pageName: string;
+  pageSlug: string;
+  useLogo: boolean;
+  logoUrl: string;
+  backgroundVideo?: string;
+  title: string;
+  subtitle: string;
+  description: string;
+}
+
+export const heroSettingsAPI = {
+  // Get all hero settings
+  getAll: async (): Promise<HeroSettings[]> => {
+    try {
+      const response = await api.get('/hero-settings');
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Failed to fetch hero settings:', error);
+      throw error;
+    }
+  },
+
+  // Get settings for a specific page
+  getPage: async (pageId: string): Promise<HeroSettings> => {
+    try {
+      const response = await api.get(`/hero-settings/${pageId}`);
+      return response.data?.data;
+    } catch (error) {
+      console.error(`Failed to fetch hero settings for ${pageId}:`, error);
+      throw error;
+    }
+  },
+
+  // Update settings for a specific page
+  updatePage: async (pageId: string, data: Partial<HeroSettings>): Promise<HeroSettings> => {
+    try {
+      const response = await api.put(`/hero-settings/${pageId}`, data);
+      return response.data?.data;
+    } catch (error) {
+      console.error(`Failed to update hero settings for ${pageId}:`, error);
+      throw error;
+    }
+  },
+
+  // Save all hero settings at once
+  saveAll: async (settings: HeroSettings[]): Promise<void> => {
+    try {
+      await api.post('/hero-settings/batch', { settings });
+    } catch (error) {
+      console.error('Failed to save all hero settings:', error);
+      throw error;
+    }
+  },
+
+  // Upload logo for a specific page
+  uploadLogo: async (pageId: string, file: File): Promise<{ logoUrl: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append('logo', file);
+      const response = await api.post(`/hero-settings/${pageId}/upload-logo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data?.data;
+    } catch (error) {
+      console.error(`Failed to upload logo for ${pageId}:`, error);
+      throw error;
+    }
+  },
+
+  // Remove logo for a specific page
+  removeLogo: async (pageId: string): Promise<void> => {
+    try {
+      await api.delete(`/hero-settings/${pageId}/logo`);
+    } catch (error) {
+      console.error(`Failed to remove logo for ${pageId}:`, error);
+      throw error;
+    }
+  },
+
+  // Upload video for a specific page
+  uploadVideo: async (pageId: string, file: File): Promise<{ videoUrl: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+      const response = await api.post(`/hero-settings/${pageId}/upload-video`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data?.data;
+    } catch (error) {
+      console.error(`Failed to upload video for ${pageId}:`, error);
+      throw error;
+    }
+  },
+
+  // Remove video for a specific page
+  removeVideo: async (pageId: string): Promise<void> => {
+    try {
+      await api.delete(`/hero-settings/${pageId}/video`);
+    } catch (error) {
+      console.error(`Failed to remove video for ${pageId}:`, error);
+      throw error;
+    }
+  },
+};
