@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Static HTML Test</title>
+</head>
+<body>
+    <h1>Static HTML Test Page</h1>
+    <p>If you can see this, the server is serving static files correctly.</p>
+    <p>This page has no JavaScript.</p>
+    
+    <div id="js-test"></div>
+    
+    <script>
+        try {
+            document.getElementById('js-test').innerHTML = '<p style="color: green;">JavaScript is working!</p>';
+        } catch (e) {
+            console.error('JavaScript error:', e);
+        }
+    </script>
+</body>
+</html>
+
+

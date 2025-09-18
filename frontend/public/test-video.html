@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Test - Kocky's</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .hero {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .video-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1;
+            transition: opacity 0.3s ease;
+        }
+        
+        .content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+        }
+        
+        .controls h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        
+        .controls label {
+            display: block;
+            margin: 10px 0 5px;
+            font-size: 12px;
+        }
+        
+        .controls input[type="range"] {
+            width: 200px;
+        }
+        
+        .controls button {
+            background: #DC2626;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .controls button:hover {
+            background: #B91C1C;
+        }
+        
+        .status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            z-index: 20;
+            font-size: 12px;
+        }
+        
+        .status.success {
+            background: rgba(34, 197, 94, 0.8);
+        }
+        
+        .status.error {
+            background: rgba(239, 68, 68, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <video 
+            id="heroVideo" 
+            class="video-bg" 
+            autoplay 
+            muted 
+            loop 
+            playsinline
+            preload="auto"
+        >
+            <source src="/videos/home-hero.mp4" type="video/mp4">
+            <source src="/videos/home-hero.webm" type="video/webm">
+            Your browser does not support the video tag.
+        </video>
+        
+        <div id="overlay" class="overlay"></div>
+        
+        <div class="content">
+            <h1 style="font-size: 4rem; margin: 0;">
+                <span style="color: #DC2626;">Kocky's</span>
+                <span style="color: #FCD34D;">Bar & Grill</span>
+            </h1>
+            <p style="font-size: 1.5rem; margin: 20px 0;">Experience the Best in Town</p>
+            <p style="font-size: 1rem; opacity: 0.8;">Video Background Test Page</p>
+        </div>
+    </div>
+    
+    <div id="status" class="status">
+        Video Status: <span id="statusText">Loading...</span>
+    </div>
+    
+    <div class="controls">
+        <h3>Video Controls</h3>
+        
+        <button onclick="togglePlay()">Play/Pause</button>
+        <button onclick="toggleMute()">Mute/Unmute</button>
+        
+        <label for="opacitySlider">
+            Overlay Opacity: <span id="opacityValue">50%</span>
+        </label>
+        <input 
+            type="range" 
+            id="opacitySlider" 
+            min="0" 
+            max="100" 
+            value="50"
+            oninput="updateOpacity(this.value)"
+        >
+        
+        <label>Video Info:</label>
+        <div style="font-size: 11px; color: #ccc;">
+            <div>Duration: <span id="duration">--</span></div>
+            <div>Current Time: <span id="currentTime">--</span></div>
+            <div>Ready State: <span id="readyState">--</span></div>
+            <div>Network State: <span id="networkState">--</span></div>
+        </div>
+    </div>
+    
+    <script>
+        const video = document.getElementById('heroVideo');
+        const overlay = document.getElementById('overlay');
+        const status = document.getElementById('status');
+        const statusText = document.getElementById('statusText');
+        
+        // Video event handlers
+        video.addEventListener('loadstart', () => {
+            statusText.textContent = 'Loading started...';
+        });
+        
+        video.addEventListener('canplay', () => {
+            statusText.textContent = 'Can start playing';
+            status.className = 'status success';
+        });
+        
+        video.addEventListener('playing', () => {
+            statusText.textContent = 'Playing';
+            status.className = 'status success';
+        });
+        
+        video.addEventListener('error', (e) => {
+            statusText.textContent = 'Error: ' + (e.message || 'Failed to load video');
+            status.className = 'status error';
+            console.error('Video error:', e);
+        });
+        
+        video.addEventListener('waiting', () => {
+            statusText.textContent = 'Buffering...';
+        });
+        
+        // Update info
+        setInterval(() => {
+            if (video.duration) {
+                document.getElementById('duration').textContent = 
+                    Math.floor(video.duration) + 's';
+                document.getElementById('currentTime').textContent = 
+                    Math.floor(video.currentTime) + 's';
+            }
+            document.getElementById('readyState').textContent = video.readyState;
+            document.getElementById('networkState').textContent = video.networkState;
+        }, 1000);
+        
+        // Control functions
+        function togglePlay() {
+            if (video.paused) {
+                video.play().catch(err => {
+                    console.error('Play failed:', err);
+                    statusText.textContent = 'Play failed: ' + err.message;
+                    status.className = 'status error';
+                });
+            } else {
+                video.pause();
+            }
+        }
+        
+        function toggleMute() {
+            video.muted = !video.muted;
+        }
+        
+        function updateOpacity(value) {
+            const opacity = value / 100;
+            overlay.style.opacity = opacity;
+            document.getElementById('opacityValue').textContent = value + '%';
+        }
+        
+        // Try to play on load
+        window.addEventListener('load', () => {
+            video.play().catch(err => {
+                console.error('Autoplay failed:', err);
+                statusText.textContent = 'Click Play to start (autoplay blocked)';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<svg width="300" height="100" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">
+  <!-- Background -->
+  <rect width="300" height="100" fill="transparent"/>
+  
+  <!-- Main Logo Group -->
+  <g id="kockys-logo">
+    <!-- Rooster Icon (simplified) -->
+    <g id="rooster" transform="translate(20, 20)">
+      <!-- Body -->
+      <ellipse cx="30" cy="40" rx="18" ry="22" fill="#DC2626" stroke="#991B1B" stroke-width="2"/>
+      
+      <!-- Head -->
+      <circle cx="30" cy="25" r="12" fill="#DC2626" stroke="#991B1B" stroke-width="2"/>
+      
+      <!-- Comb -->
+      <path d="M 25 18 Q 23 12, 25 15 T 30 12 T 35 15 T 38 12" 
+            fill="#DC2626" stroke="#991B1B" stroke-width="1.5"/>
+      
+      <!-- Beak -->
+      <path d="M 40 25 L 45 27 L 40 29 Z" fill="#FCD34D"/>
+      
+      <!-- Eye -->
+      <circle cx="33" cy="24" r="2" fill="white"/>
+      <circle cx="33" cy="24" r="1" fill="black"/>
+      
+      <!-- Tail Feathers -->
+      <path d="M 15 35 Q 5 30, 8 40 Q 10 45, 15 42" fill="#991B1B"/>
+      <path d="M 13 40 Q 3 38, 6 46 Q 8 50, 13 47" fill="#7F1D1D"/>
+    </g>
+    
+    <!-- Text: KOCKY'S -->
+    <text x="80" y="45" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#DC2626">
+      KOCKY'S
+    </text>
+    
+    <!-- Text: BAR & GRILL -->
+    <text x="80" y="65" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#FCD34D" letter-spacing="2">
+      BAR &amp; GRILL
+    </text>
+    
+    <!-- Est. text -->
+    <text x="80" y="82" font-family="Arial, sans-serif" font-size="11" fill="#991B1B" font-style="italic">
+      EST. 2010 • FRESNO, CA
+    </text>
+    
+    <!-- Decorative underline -->
+    <rect x="80" y="68" width="140" height="1" fill="#DC2626" opacity="0.5"/>
+  </g>
+</svg>

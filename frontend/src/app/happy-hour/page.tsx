@@ -1,0 +1,338 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Clock, Calendar, Tag, Sparkles } from 'lucide-react';
+import { EditableHeroSection } from '@/components/sections/HeroSection';
+import { MenuSection, MenuItem } from '@/components/menu/MenuCard';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { settings } from '@/lib/api/settings';
+import toast from 'react-hot-toast';
+import { getHeroSettingsWithDefaults, getHeroSettingsAsync, clearHeroSettingsCache } from '@/lib/hero-settings';
+import { pageContentAPI } from '@/lib/api/page-content';
+
+// Mock data - in production this would come from the backend
+const mockHappyHourItems: MenuItem[] = [
+  {
+    id: '1',
+    name: 'House Margarita',
+    description: 'Classic lime margarita with premium tequila',
+    price: 5,
+    category: 'drinks',
+    image: '/images/margarita.jpg',
+    featured: true,
+    rating: 4.5,
+  },
+  {
+    id: '2',
+    name: 'Draft Beer',
+    description: 'Selection of local and imported draft beers',
+    price: 3,
+    category: 'drinks',
+    image: '/images/beer.jpg',
+    rating: 4.3,
+  },
+  {
+    id: '3',
+    name: 'Wine by the Glass',
+    description: 'Red or white house wine',
+    price: 4,
+    category: 'drinks',
+    image: '/images/wine.jpg',
+  },
+  {
+    id: '4',
+    name: 'Buffalo Wings',
+    description: 'Crispy wings with your choice of sauce',
+    price: 6,
+    category: 'food',
+    image: '/images/wings.jpg',
+    featured: true,
+    spicyLevel: 3,
+    rating: 4.7,
+  },
+  {
+    id: '5',
+    name: 'Loaded Nachos',
+    description: 'Tortilla chips with cheese, jalapeños, and all the fixings',
+    price: 7,
+    category: 'food',
+    image: '/images/nachos.jpg',
+    spicyLevel: 2,
+    dietaryInfo: ['Vegetarian Option'],
+  },
+  {
+    id: '6',
+    name: 'Slider Trio',
+    description: 'Three mini burgers with different toppings',
+    price: 8,
+    category: 'food',
+    image: '/images/sliders.jpg',
+    rating: 4.6,
+  },
+];
+
+export default function HappyHourPage() {
+  const isAdmin = false; // Admin controls removed from frontend
+  const [happyHourItems, setHappyHourItems] = useState(mockHappyHourItems);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.35);
+  const [heroData, setHeroData] = useState({
+    title: 'Happy Hour Specials',
+    subtitle: 'Daily 3PM - 6PM',
+    description: 'Join us for amazing drink specials and appetizer deals every weekday!',
+    backgroundImage: '',
+    backgroundVideo: undefined as string | undefined,
+    useLogo: true,
+    logoUrl: '/kockys-logo.png'
+  });
+  const [heroLoaded, setHeroLoaded] = useState(false);
+
+  // Load settings from API on mount and when page gains focus
+  useEffect(() => {
+    const loadSettings = async (bypassCache: boolean = false) => {
+      if (bypassCache) {
+        clearHeroSettingsCache(); // Clear cache to force fresh fetch
+      }
+      
+      // Load hero settings
+      const settings = await getHeroSettingsAsync('happy-hour', bypassCache);
+      
+      // Load page content for video
+      let pageContent = null;
+      try {
+        pageContent = await pageContentAPI.getBySlug('happy-hour');
+      } catch (error) {
+        console.warn('Failed to load page content for happy-hour:', error);
+      }
+      
+      if (settings || pageContent) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Loaded hero settings from API:', settings);
+          console.log('Loaded page content:', pageContent);
+        }
+        
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://staging.kockys.com/api';
+        const MEDIA_ORIGIN = API_BASE_URL.replace(/\/?api$/, '');
+        
+        setHeroData({
+          title: settings?.useLogo ? '' : (settings?.title || 'Happy Hour Specials'),
+          subtitle: settings?.subtitle || 'Daily 3PM - 6PM',
+          description: settings?.description || 'Join us for amazing drink specials and appetizer deals every weekday!',
+          backgroundImage: settings?.backgroundImage ? `${MEDIA_ORIGIN}${settings.backgroundImage}` : '',
+          backgroundVideo: settings?.backgroundVideo ? `${MEDIA_ORIGIN}${settings.backgroundVideo}` : undefined,
+          useLogo: settings?.useLogo ?? true,
+          logoUrl: settings?.logoUrl || '/kockys-logo.png'
+        });
+        setHeroLoaded(true);
+      }
+    };
+
+    // Delay initial load slightly to avoid hydration mismatch
+    const timer = setTimeout(() => {
+      loadSettings(true);
+    }, 100);
+
+    // Reload when window gains focus (bypass cache)
+    const handleFocus = () => {
+      loadSettings(true);
+    };
+
+    // Reload periodically to catch changes
+    const interval = setInterval(() => loadSettings(false), 5000); // Check every 5 seconds
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const queryClient = useQueryClient();
+
+  // Fetch settings from backend
+  const { data: siteSettings } = useQuery({
+    queryKey: ['happy-hour-settings'],
+    queryFn: settings.get,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const drinkItems = happyHourItems.filter(item => item.category === 'drinks');
+  const foodItems = happyHourItems.filter(item => item.category === 'food');
+
+  const handleEditItem = (item: MenuItem) => {
+    // In production, open edit modal
+    if (process.env.NODE_ENV === 'development') console.log('Edit item:', item);
+    toast.success('Edit functionality coming soon!');
+  };
+
+  const handleDeleteItem = (id: string) => {
+    if (confirm('Are you sure you want to delete this item?')) {
+      setHappyHourItems(items => items.filter(item => item.id !== id));
+      toast.success('Item deleted');
+    }
+  };
+
+  const handleAddItem = (category: string) => {
+    // In production, open add modal
+    if (process.env.NODE_ENV === 'development') console.log('Add item to category:', category);
+    toast.success('Add functionality coming soon!');
+  };
+
+  const handleHeroSave = async (data: any) => {
+    setHeroData(prev => ({ ...prev, ...data }));
+    toast.success('Hero section updated!');
+  };
+
+  const handleHeroImageUpload = async (file: File) => {
+    // In production, upload to cloud storage
+    const url = URL.createObjectURL(file);
+    setHeroData(prev => ({ ...prev, backgroundImage: url, backgroundVideo: undefined }));
+    toast.success('Image uploaded!');
+  };
+
+  const handleHeroVideoUpload = async (file: File) => {
+    // In production, upload to cloud storage
+    const url = URL.createObjectURL(file);
+    setHeroData(prev => ({ ...prev, backgroundVideo: url, backgroundImage: undefined }));
+    toast.success('Video uploaded!');
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
+      {/* Hero Section */}
+      <EditableHeroSection
+        title={heroData.title}
+        subtitle={heroData.subtitle}
+        description={heroData.description}
+        backgroundImage={heroData.backgroundImage}
+        backgroundVideo={heroData.backgroundVideo}
+        overlayOpacity={overlayOpacity}
+        height="large"
+        showLogo={heroData.useLogo || !heroData.title}
+        logoUrl={heroData.logoUrl}
+        ctaButtons={[
+          { text: 'View Menu', href: '#menu' },
+          { text: 'Make Reservation', href: '/reservations', variant: 'outline' },
+        ]}
+        isAdmin={isAdmin}
+        onOpacityChange={setOverlayOpacity}
+        onSave={handleHeroSave}
+        onUploadImage={handleHeroImageUpload}
+        onUploadVideo={handleHeroVideoUpload}
+      />
+
+      {/* Happy Hour Times */}
+      <section className="py-16 px-4">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl font-bold mb-4">Happy Hour Schedule</h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400">
+              The best deals in town, every weekday!
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {[
+              {
+                icon: Clock,
+                title: 'Daily Hours',
+                description: '3:00 PM - 6:00 PM',
+                detail: 'Monday through Friday',
+              },
+              {
+                icon: Tag,
+                title: 'Drink Specials',
+                description: 'Up to 50% Off',
+                detail: 'Selected cocktails, beer & wine',
+              },
+              {
+                icon: Sparkles,
+                title: 'Food Deals',
+                description: '$5 - $8 Appetizers',
+                detail: 'Perfect for sharing',
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center"
+              >
+                <item.icon className="w-12 h-12 text-primary mx-auto mb-4" />
+                <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+                <p className="text-2xl font-bold text-primary mb-1">{item.description}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{item.detail}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Menu Sections */}
+      <div id="menu" className="py-16 px-4 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto">
+          {/* Drink Specials */}
+          <MenuSection
+            title="Drink Specials"
+            description="Premium drinks at unbeatable prices"
+            items={drinkItems}
+            onEdit={handleEditItem}
+            onDelete={handleDeleteItem}
+            onAdd={() => handleAddItem('drinks')}
+            isAdmin={isAdmin}
+            columns={3}
+          />
+
+          {/* Food Specials */}
+          <MenuSection
+            title="Appetizer Specials"
+            description="Delicious bites to complement your drinks"
+            items={foodItems}
+            onEdit={handleEditItem}
+            onDelete={handleDeleteItem}
+            onAdd={() => handleAddItem('food')}
+            isAdmin={isAdmin}
+            columns={3}
+          />
+        </div>
+      </div>
+
+      {/* Special Events */}
+      <section className="py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-r from-primary to-secondary rounded-3xl p-12 text-white text-center"
+          >
+            <h2 className="text-4xl font-bold mb-4">Extended Happy Hour</h2>
+            <p className="text-2xl mb-2">Every Friday: 3PM - 7PM</p>
+            <p className="text-xl mb-8 text-gray-100">
+              Start your weekend right with an extra hour of happy prices!
+            </p>
+            <div className="grid md:grid-cols-2 gap-6 text-left max-w-2xl mx-auto">
+              <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+                <h3 className="font-bold mb-2">Live Music Fridays</h3>
+                <p className="text-sm">Local bands perform from 5PM onwards</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+                <h3 className="font-bold mb-2">Trivia Thursdays</h3>
+                <p className="text-sm">Win prizes while enjoying happy hour deals</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+    </div>
+  );
+}
