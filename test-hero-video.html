@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hero Video Test</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        video { max-width: 100%; height: auto; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>Hero Video Functionality Test</h1>
+    
+    <div class="test-section">
+        <h2>1. API Test</h2>
+        <div id="api-status" class="status info">Testing API...</div>
+        <div id="api-data"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Video File Test</h2>
+        <div id="video-status" class="status info">Testing video file...</div>
+        <video id="test-video" controls style="display: none;">
+            <source src="https://staging.kockys.com/uploads/videos/home-hero.mp4" type="video/mp4">
+        </video>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Image File Test</h2>
+        <div id="image-status" class="status info">Testing image file...</div>
+        <img id="test-image" src="https://staging.kockys.com/uploads/images/home-hero.jpg" style="display: none; max-width: 300px;">
+    </div>
+
+    <script>
+        // Test API
+        fetch('https://staging.kockys.com/api/hero-settings/home')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('api-status').className = 'status success';
+                document.getElementById('api-status').textContent = 'API working!';
+                document.getElementById('api-data').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(error => {
+                document.getElementById('api-status').className = 'status error';
+                document.getElementById('api-status').textContent = 'API Error: ' + error.message;
+            });
+
+        // Test video
+        const video = document.getElementById('test-video');
+        video.addEventListener('loadeddata', () => {
+            document.getElementById('video-status').className = 'status success';
+            document.getElementById('video-status').textContent = 'Video loaded successfully!';
+            video.style.display = 'block';
+        });
+        
+        video.addEventListener('error', (e) => {
+            document.getElementById('video-status').className = 'status error';
+            document.getElementById('video-status').textContent = 'Video Error: ' + e.message;
+        });
+
+        // Test image
+        const image = document.getElementById('test-image');
+        image.addEventListener('load', () => {
+            document.getElementById('image-status').className = 'status success';
+            document.getElementById('image-status').textContent = 'Image loaded successfully!';
+            image.style.display = 'block';
+        });
+        
+        image.addEventListener('error', (e) => {
+            document.getElementById('image-status').className = 'status error';
+            document.getElementById('image-status').textContent = 'Image Error: ' + e.message;
+        });
+    </script>
+</body>
+</html>

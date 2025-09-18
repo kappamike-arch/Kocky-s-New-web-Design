@@ -9,148 +9,9 @@ import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { cms } from '@/lib/api/cms';
 import { analytics } from '@/lib/api/analytics';
-import { getHeroSettingsAsync, clearHeroSettingsCache, getHeroSettingsWithDefaults } from '@/lib/hero-settings';
-import { pageContentAPI } from '@/lib/api/page-content';
+import { HeroSection } from '@/components/sections/HeroSection';
 
 export default function HomePage() {
-  const [heroBackground, setHeroBackground] = useState<string>('');
-  const [heroVideo, setHeroVideo] = useState<string | undefined>(undefined);
-  const [isClient, setIsClient] = useState(false);
-  const [overlayOpacity, setOverlayOpacity] = useState<number>(0.5);
-  const [videoError, setVideoError] = useState(false);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [fallbackTried, setFallbackTried] = useState(false);
-  
-  // API base (with /api) and media origin (no /api)
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://staging.kockys.com/api';
-  const MEDIA_ORIGIN = API_BASE_URL.replace(/\/?api$/, '');
-  
-  // Hero settings state - use consistent initial state to avoid hydration mismatch
-  const [heroData, setHeroData] = useState({
-    title: "Welcome to Kocky's",
-    subtitle: 'Bar & Grill',
-    description: 'Where Great Food Meets Unforgettable Moments',
-    useLogo: true,
-    logoUrl: '/kockys-logo.png' // Use default logo initially
-  });
-  const [heroLoaded, setHeroLoaded] = useState(false);
-  
-  // Fetch page data from CMS
-  const { data: pageData } = useQuery({
-    queryKey: ['page', 'home'],
-    queryFn: () => cms.getPage('home'),
-  });
-
-  // Fetch featured menu items
-  const { data: featuredItems } = useQuery({
-    queryKey: ['featured-items'],
-    queryFn: () => cms.getFeaturedItems(6),
-  });
-
-  // Fetch active theme
-  const { data: theme } = useQuery({
-    queryKey: ['theme'],
-    queryFn: () => cms.getActiveTheme(),
-  });
-
-  // Load hero settings from API after mount to avoid hydration issues
-  useEffect(() => {
-    setIsClient(true);
-    const loadSettings = async (bypassCache: boolean = false) => {
-      console.log("DEBUG: loadSettings called with bypassCache =", bypassCache);
-      if (bypassCache) {
-        clearHeroSettingsCache();
-      }
-      
-      // Load hero settings
-      const settings = await getHeroSettingsAsync('home', bypassCache);
-      console.log("DEBUG: settings =", settings);
-      
-      // Load page content for video
-      const pageContent = await pageContentAPI.getBySlug('home');
-      
-      if (settings || pageContent) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Loaded home hero settings from API:', settings);
-          console.log('Loaded home page content:', pageContent);
-        }
-        
-        // Set hero data from settings
-        if (settings) {
-          setHeroData({
-            title: settings.title,
-            subtitle: settings.subtitle,
-            description: settings.description,
-            useLogo: settings.useLogo !== false,
-            logoUrl: settings.logoUrl || '/kockys-logo.png'
-          });
-          
-          // Set video from hero settings
-          if (settings.backgroundVideo) {
-            console.log("Setting hero video:", `${MEDIA_ORIGIN}${settings.backgroundVideo}?v=${Date.now()}`);
-            setHeroVideo(`${MEDIA_ORIGIN}${settings.backgroundVideo}?v=${Date.now()}`);
-            setVideoError(false);
-          }
-          
-          // Set background image from hero settings
-          if (settings.backgroundImage) {
-            setHeroBackground(`${MEDIA_ORIGIN}${settings.backgroundImage}`);
-          }
-        }
-        
-        // Set video/image from page content (fallback)
-        if (pageContent && !settings?.backgroundVideo) {
-          if (pageContent.heroVideo) {
-            setHeroVideo(`${MEDIA_ORIGIN}${pageContent.heroVideo}?v=${Date.now()}`);
-            setVideoError(false);
-          }
-          if (pageContent.heroImage && !settings?.backgroundImage) {
-            setHeroBackground(`${MEDIA_ORIGIN}${pageContent.heroImage}`);
-          }
-        }
-        
-        setHeroLoaded(true);
-      }
-    };
-
-    // Delay initial load slightly to avoid hydration mismatch
-    const timer = setTimeout(() => {
-      loadSettings(true);
-    }, 100);
-
-    // Reload when window gains focus (bypass cache)
-    const handleFocus = () => {
-      loadSettings(true);
-    };
-
-    // Reload periodically to catch changes
-    const interval = setInterval(() => loadSettings(false), 5000); // Check every 5 seconds
-
-    window.addEventListener('focus', handleFocus);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('focus', handleFocus);
-      clearInterval(interval);
-    };
-  }, []);
-
-  useEffect(() => {
-    setIsClient(true);
-    // Set hero background from CMS if available
-    if (pageData) {
-      if (pageData.backgroundType === 'IMAGE' && pageData.backgroundImage?.url) {
-        setHeroBackground(pageData.backgroundImage.url);
-      } else if (pageData.backgroundType === 'VIDEO' && pageData.backgroundVideo?.url) {
-        setHeroVideo(pageData.backgroundVideo.url);
-        setVideoError(false);
-      } else if (pageData.backgroundType === 'COLOR') {
-        setHeroBackground(pageData.backgroundColor || '#FF6B35');
-      }
-    }
-  }, [pageData]);
-
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
     animate: { opacity: 1, y: 0 },
@@ -165,203 +26,37 @@ export default function HomePage() {
     }
   };
 
+  // Fetch featured menu items
+  const { data: featuredItems } = useQuery({
+    queryKey: ['featured-items'],
+    queryFn: () => cms.getFeaturedItems(6),
+  });
+
+  // Fetch active theme
+  const { data: theme } = useQuery({
+    queryKey: ['theme'],
+    queryFn: () => cms.getActiveTheme(),
+  });
+
   return (
     <div className="min-h-screen">
-      {/* Hero Section with Video/Image Background */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Background Media Layer */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          {isClient && heroVideo ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              loop
-              muted={isMuted}
-              playsInline
-              onError={(e) => {
-                console.error("Video failed to load:", heroVideo, e);
-                // Don't use hardcoded fallback - just show error
-                setVideoError(true);
-              }}
-              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-            >
-              <source src={heroVideo} type="video/mp4" />
-              <source src={heroVideo.replace('.mp4', '.webm')} type="video/webm" />
-            </video>
-          ) : (
-            <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
-              style={{ 
-                backgroundImage: heroBackground.startsWith('#') 
-                  ? undefined 
-                  : `url(${heroBackground})`,
-                backgroundColor: heroBackground.startsWith('#') ? heroBackground : undefined
-              }}
-            />
-          )}
-        </div>
-        
-        {/* Overlay with adjustable opacity */}
-        <div 
-          className="absolute inset-0 bg-black transition-opacity duration-300 z-[1] pointer-events-none"
-          style={{ opacity: overlayOpacity }}
-        />
-
-        {/* Video Controls */}
-        {!videoError && heroVideo && (
-          <div className="absolute bottom-4 right-4 z-20 flex gap-2 pointer-events-auto">
-            <Button
-              size="icon"
-              variant="secondary"
-              className="bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
-              onClick={() => {
-                if (videoRef.current) {
-                  if (isVideoPlaying) {
-                    videoRef.current.pause();
-                  } else {
-                    videoRef.current.play();
-                  }
-                  setIsVideoPlaying(!isVideoPlaying);
-                }
-              }}
-            >
-              {isVideoPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
-              onClick={() => {
-                if (videoRef.current) {
-                  videoRef.current.muted = !isMuted;
-                  setIsMuted(!isMuted);
-                }
-              }}
-            >
-              {isMuted ? (
-                <VolumeX className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        )}
-
-
-
-        {/* Content */}
-        <motion.div 
-          className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto pointer-events-auto"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
-        >
-          {heroData.useLogo && heroData.logoUrl ? (
-            <motion.div 
-              className="mb-6 flex justify-center"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-            >
-              <div className="relative">
-                <img 
-                  src={
-                    heroData.logoUrl.startsWith('http') 
-                      ? heroData.logoUrl 
-                      : heroData.logoUrl.startsWith('/uploads/') 
-                        ? `${MEDIA_ORIGIN}${heroData.logoUrl}`  // Backend serves uploaded files
-                        : heroData.logoUrl
-                  }
-                  alt="Kocky's Logo" 
-                  className="h-40 md:h-52 lg:h-64 w-auto"
-                  style={{ 
-                    filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.7))'
-                  }}
-                  onError={(e: any) => {
-                    e.currentTarget.style.display = 'none';
-                    const fallback = document.getElementById('hero-text-fallback');
-                    if (fallback) fallback.style.display = 'block';
-                  }}
-                />
-              </div>
-            </motion.div>
-          ) : (
-            <motion.h1 
-              id="hero-text-fallback"
-              className="text-5xl md:text-7xl font-bold mb-6"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-            >
-              {heroData.title || "Welcome to Kocky's"}
-            </motion.h1>
-          )}
-          
-          {heroData.subtitle && (
-            <motion.h2 
-              className="text-2xl md:text-3xl mb-4 text-orange-400"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-            >
-              {heroData.subtitle}
-            </motion.h2>
-          )}
-          
-          <motion.p 
-            className="text-xl md:text-2xl mb-8 text-gray-200"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-          >
-            {heroData.description}
-          </motion.p>
-
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-          >
-            <Link href="/menu">
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full transition-colors flex items-center gap-2"
-                onClick={() => analytics.event('click', 'View Menu Button')}
-              >
-                View Our Menu <ArrowRight className="w-5 h-5" />
-              </motion.button>
-            </Link>
-            
-            <Link href="/reservations">
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-white/10 backdrop-blur hover:bg-white/20 text-white font-bold rounded-full border-2 border-white/50 transition-colors"
-                onClick={() => analytics.event('click', 'Make Reservation Button')}
-              >
-                Make a Reservation
-              </motion.button>
-            </Link>
-          </motion.div>
-        </motion.div>
-
-        {/* Scroll Indicator */}
-        <motion.div 
-          className="absolute bottom-10 left-1/2 transform -translate-x-1/2"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        >
-          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white rounded-full mt-2" />
-          </div>
-        </motion.div>
-      </section>
+      {/* Hero Section with API-driven content */}
+      <HeroSection 
+        pageId="home"
+        height="full"
+        ctaButtons={[
+          {
+            text: "View Our Menu",
+            href: "/menu",
+            variant: "default"
+          },
+          {
+            text: "Make a Reservation", 
+            href: "/reservations",
+            variant: "outline"
+          }
+        ]}
+      />
 
       {/* Featured Menu Items */}
       {featuredItems?.menuItems && featuredItems.menuItems.length > 0 && (

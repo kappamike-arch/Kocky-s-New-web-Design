@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Edit, Upload, Play, Pause, Volume2, VolumeX, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import themeConfig from '@/lib/theme-config';
 
 // Helper function to get the correct logo URL
 function getLogoUrl(logoUrl?: string): string {
@@ -26,7 +25,22 @@ function getLogoUrl(logoUrl?: string): string {
   return logoUrl.startsWith('/') ? logoUrl : `/${logoUrl}`;
 }
 
+interface HeroData {
+  id: string;
+  pageName: string;
+  pageSlug: string;
+  useLogo: boolean;
+  logoUrl?: string;
+  backgroundImage?: string;
+  backgroundVideo?: string;
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  mediaPreference?: string;
+}
+
 interface HeroSectionProps {
+  pageId?: string;
   title?: string | null;
   subtitle?: string;
   description?: string;
@@ -50,6 +64,7 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({
+  pageId = 'home',
   title,
   subtitle,
   description,
@@ -74,15 +89,75 @@ export function HeroSection({
   const [localOpacity, setLocalOpacity] = useState(overlayOpacity);
   const [videoError, setVideoError] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [heroData, setHeroData] = useState<HeroData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Debug log for logo rendering
-  if (showLogo && logoUrl) {
-    if (process.env.NODE_ENV === 'development') console.log('[DEBUG] HeroSection rendering logo with URL:', logoUrl);
-    if (process.env.NODE_ENV === 'development') console.log('[DEBUG] showLogo:', showLogo);
-    if (process.env.NODE_ENV === 'development') console.log('[DEBUG] logoUrl:', logoUrl);
-  }
+  // API base URL
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://staging.kockys.com/api';
+  const MEDIA_ORIGIN = API_BASE_URL.replace(/\/?api$/, '');
+  
+  // Fetch hero data from API
+  useEffect(() => {
+    const fetchHeroData = async () => {
+      try {
+        setIsLoading(true);
+        console.log(`[HeroSection] Fetching hero data for page: ${pageId}`);
+        
+        const response = await fetch(`${API_BASE_URL}/hero-settings/${pageId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+
+        if (!response.ok) {
+          console.error(`[HeroSection] API request failed: ${response.status} ${response.statusText}`);
+          return;
+        }
+
+        const data = await response.json();
+        console.log(`[HeroSection] Received hero data:`, data);
+        
+        if (data && data.id) {
+          setHeroData(data);
+        }
+      } catch (error) {
+        console.error('[HeroSection] Error fetching hero data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHeroData();
+  }, [pageId, API_BASE_URL]);
+
+  // Determine what to display based on API data or props
+  const displayData = {
+    title: heroData?.title || title,
+    subtitle: heroData?.subtitle || subtitle,
+    description: heroData?.description || description,
+    backgroundImage: heroData?.backgroundImage || backgroundImage,
+    backgroundVideo: heroData?.backgroundVideo || backgroundVideo,
+    showLogo: heroData?.useLogo !== undefined ? heroData.useLogo : showLogo,
+    logoUrl: heroData?.logoUrl || logoUrl
+  };
+
+  // Construct full URLs for media
+  const videoUrl = displayData.backgroundVideo 
+    ? (displayData.backgroundVideo.startsWith('http') 
+        ? displayData.backgroundVideo 
+        : `${MEDIA_ORIGIN}${displayData.backgroundVideo}`)
+    : null;
+
+  const imageUrl = displayData.backgroundImage 
+    ? (displayData.backgroundImage.startsWith('http') 
+        ? displayData.backgroundImage 
+        : `${MEDIA_ORIGIN}${displayData.backgroundImage}`)
+    : null;
 
   useEffect(() => {
     setLocalOpacity(overlayOpacity);
@@ -90,19 +165,17 @@ export function HeroSection({
 
   useEffect(() => {
     // Auto-play video when component mounts or video source changes
-    if (videoRef.current && backgroundVideo && !videoError && videoLoaded) {
+    if (videoRef.current && videoUrl && !videoError && videoLoaded) {
       const playPromise = videoRef.current.play();
       
       if (playPromise !== undefined) {
         playPromise.catch(err => {
           console.error('Video autoplay failed:', err);
           setIsVideoPlaying(false);
-          // If autoplay fails, gracefully fall back to showing the video as paused
-          // The user can still manually play it using the controls
         });
       }
     }
-  }, [backgroundVideo, videoError, videoLoaded]);
+  }, [videoUrl, videoError, videoLoaded]);
 
   const heightClasses = {
     small: 'h-[40vh]',
@@ -144,13 +217,13 @@ export function HeroSection({
   };
 
   const handleVideoError = () => {
-    console.error('Video failed to load');
+    console.error('Video failed to load:', videoUrl);
     setVideoError(true);
     setVideoLoaded(false);
   };
 
   const handleVideoLoad = () => {
-    console.log('Video loaded successfully');
+    console.log('Video loaded successfully:', videoUrl);
     setVideoLoaded(true);
     setVideoError(false);
   };
@@ -164,8 +237,8 @@ export function HeroSection({
       const isVideo = file.type.startsWith('video/');
       if (isVideo && onUploadVideo) {
         await onUploadVideo(file);
-        setVideoError(false); // Reset error state on new upload
-        setVideoLoaded(false); // Reset loaded state
+        setVideoError(false);
+        setVideoLoaded(false);
       } else if (!isVideo && onUploadImage) {
         await onUploadImage(file);
       }
@@ -180,8 +253,8 @@ export function HeroSection({
   };
 
   // Determine what to show as background
-  const shouldShowVideo = backgroundVideo && !videoError && videoLoaded;
-  const shouldShowImage = !shouldShowVideo && backgroundImage;
+  const shouldShowVideo = videoUrl && !videoError && videoLoaded;
+  const shouldShowImage = !shouldShowVideo && imageUrl;
 
   return (
     <section
@@ -196,24 +269,22 @@ export function HeroSection({
         {shouldShowVideo ? (
           <video
             ref={videoRef}
-            key={backgroundVideo} // Force re-render when source changes
+            key={videoUrl} // Force re-render when source changes
             autoPlay
-            loop
             muted={isMuted}
+            loop
             playsInline
             onError={handleVideoError}
             onLoadedData={handleVideoLoad}
             onCanPlay={handleVideoLoad}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ zIndex: 0 }}
+            className="absolute inset-0 w-full h-full object-cover z-0"
           >
-            <source src={backgroundVideo} type="video/mp4" />
-            <source src={backgroundVideo.replace('.mp4', '.webm')} type="video/webm" />
+            <source src={videoUrl} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
         ) : shouldShowImage ? (
           <Image
-            src={backgroundImage}
+            src={imageUrl}
             alt="Hero background"
             fill
             className="object-cover"
@@ -333,6 +404,13 @@ export function HeroSection({
         </div>
       )}
 
+      {/* Loading Indicator */}
+      {isLoading && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/20">
+          <div className="text-white text-lg">Loading...</div>
+        </div>
+      )}
+
       {/* Content Layer - Higher z-index for better visibility (z-50) */}
       <div className="relative z-50 text-center text-white px-4 max-w-5xl mx-auto">
         <motion.div
@@ -341,11 +419,11 @@ export function HeroSection({
           transition={{ duration: 0.8 }}
         >
           {/* Logo or Title Container with enhanced visibility */}
-          {showLogo ? (
+          {displayData.showLogo ? (
             <div className="mb-6 flex justify-center">
               <div className="relative">
                 <img 
-                  src={getLogoUrl(logoUrl)}
+                  src={getLogoUrl(displayData.logoUrl)}
                   alt="Kocky's Logo" 
                   className="h-40 md:h-52 lg:h-64 w-auto relative z-20"
                   style={{ 
@@ -355,8 +433,7 @@ export function HeroSection({
                   }}
                   onError={(e: any) => {
                     const target = e.target as HTMLImageElement;
-                    console.warn('[DEBUG] Logo failed to load:', logoUrl);
-                    // Fallback to default logo if not already using it
+                    console.warn('[DEBUG] Logo failed to load:', displayData.logoUrl);
                     if (target.src !== '/kockys-logo.png' && !target.src.endsWith('/kockys-logo.png')) {
                       target.src = '/kockys-logo.png';
                     }
@@ -364,18 +441,9 @@ export function HeroSection({
                 />
               </div>
             </div>
-          ) : showLogo ? (
-            <div className="mb-6 flex justify-center">
-              <div className="relative">
-                <span className="text-6xl md:text-8xl font-bold relative z-20">
-                  <span className="text-red-600 drop-shadow-[0_4px_6px_rgba(0,0,0,0.7)]">Kocky's</span>
-                  <span className="text-yellow-500 ml-2 drop-shadow-[0_4px_6px_rgba(0,0,0,0.7)]">Bar & Grill</span>
-                </span>
-              </div>
-            </div>
-          ) : title ? (
+          ) : displayData.title ? (
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 drop-shadow-[0_4px_8px_rgba(0,0,0,0.9)] relative z-10">
-              {title}
+              {displayData.title}
             </h1>
           ) : (
             // Fallback to default Kocky's if no logo or title
@@ -388,16 +456,16 @@ export function HeroSection({
           )}
 
           {/* Subtitle */}
-          {subtitle && (
+          {displayData.subtitle && (
             <h2 className="text-xl md:text-3xl font-semibold mb-4 text-gray-100">
-              {subtitle}
+              {displayData.subtitle}
             </h2>
           )}
 
           {/* Description */}
-          {description && (
+          {displayData.description && (
             <p className="text-lg md:text-xl mb-8 text-gray-200 max-w-3xl mx-auto">
-              {description}
+              {displayData.description}
             </p>
           )}
 
