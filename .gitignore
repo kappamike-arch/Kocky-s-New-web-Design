@@ -1,0 +1,10 @@
+# SSL certificates
+/etc/letsencrypt/*
+*.pem
+
+# Apache system configs
+/etc/apache2/conf.d/*
+
+# Environment configs
+.env
+.env.local
