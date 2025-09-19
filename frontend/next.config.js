@@ -12,7 +12,6 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
-    unoptimized: true,
     remotePatterns: [
       // External image sources
       {

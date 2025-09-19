@@ -276,6 +276,7 @@ export function HeroSection({
                 fill
                 className="object-cover"
                 priority
+                unoptimized={true}
                 style={{ zIndex: 0 }}
               />
             );
