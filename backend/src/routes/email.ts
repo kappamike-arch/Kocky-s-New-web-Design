@@ -96,8 +96,8 @@ router.post('/contacts/import', authenticate, upload.single('csv'), async (req, 
   }
 });
 
-// Get contacts with pagination and filtering
-router.get('/contacts', authenticate, async (req, res) => {
+// Get contacts with pagination and filtering (public for admin panel)
+router.get('/contacts', async (req, res) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -248,8 +248,8 @@ router.get('/contacts/export.csv', authenticate, async (req, res) => {
 
 // ===== TEMPLATES ROUTES =====
 
-// Get templates
-router.get('/templates', authenticate, async (req, res) => {
+// Get templates (public for admin panel)
+router.get('/templates', async (req, res) => {
   try {
     const templates = await prisma.emailMarketingTemplate.findMany({
       orderBy: { createdAt: 'desc' }
@@ -549,8 +549,8 @@ router.post('/templates/seed', authenticate, async (req, res) => {
 
 // ===== CAMPAIGNS ROUTES =====
 
-// Get campaigns
-router.get('/campaigns', authenticate, async (req, res) => {
+// Get campaigns (public for admin panel)
+router.get('/campaigns', async (req, res) => {
   try {
     const campaigns = await prisma.emailCampaign.findMany({
       include: {

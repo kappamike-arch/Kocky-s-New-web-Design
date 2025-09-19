@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST='{"app/media/page.tsx -> ../../lib/api/hero-settings":{"id":9625,"files":["static/chunks/5125-3591bc8dfce2dbe1.js","static/chunks/9625.a7c245f01b006df1.js"]}}';
+self.__REACT_LOADABLE_MANIFEST='{"app/media/page.tsx -> ../../lib/api/hero-settings":{"id":9625,"files":["static/chunks/5125-3591bc8dfce2dbe1.js","static/chunks/9625.2e2716601394b3d4.js"]}}';

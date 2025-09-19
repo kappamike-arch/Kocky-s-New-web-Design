@@ -12,6 +12,7 @@ import { analytics } from '@/lib/api/analytics';
 import { getHeroSettingsAsync, clearHeroSettingsCache, getHeroSettingsWithDefaults } from '@/lib/hero-settings';
 import { pageContentAPI } from '@/lib/api/page-content';
 import { decodeHtmlEntities } from '@/lib/utils/htmlDecode';
+import { HeroSection } from '@/components/sections/HeroSection';
 
 export default function HomePage() {
   const [heroBackground, setHeroBackground] = useState<string>('');
@@ -23,9 +24,9 @@ export default function HomePage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [fallbackTried, setFallbackTried] = useState(false);
   
-  // API base (with /api) and media origin (web server)
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-  const MEDIA_ORIGIN = process.env.NEXT_PUBLIC_MEDIA_URL || '/uploads';
+  // API base (with /api) and media origin (Apache proxy)
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://staging.kockys.com/api';
+  const MEDIA_ORIGIN = process.env.NEXT_PUBLIC_MEDIA_URL || 'https://staging.kockys.com';
   
   // Hero settings state - use consistent initial state to avoid hydration mismatch
   const [heroData, setHeroData] = useState({
@@ -36,6 +37,8 @@ export default function HomePage() {
     logoUrl: '/kockys-logo.png' // Use default logo initially
   });
   const [heroLoaded, setHeroLoaded] = useState(false);
+  const [heroSettings, setHeroSettings] = useState<any>(null);
+  const [heroLoading, setHeroLoading] = useState(true);
   
   // CMS queries completely disabled - using static content instead
   const pageData = null;
@@ -45,77 +48,90 @@ export default function HomePage() {
   // Load hero settings from API after mount to avoid hydration issues
   useEffect(() => {
     const loadSettings = async (bypassCache: boolean = false) => {
-      if (bypassCache) {
-        clearHeroSettingsCache();
-      }
-      
-      // Load hero settings
-      const settings = await getHeroSettingsAsync('home');
-      
-      // Load page content for video
-      const pageContent = await pageContentAPI.getBySlug('home');
-      
-      if (settings || pageContent) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Loaded home hero settings from API:', settings);
-          console.log('Loaded home page content:', pageContent);
+      try {
+        setHeroLoading(true);
+        
+        if (bypassCache) {
+          clearHeroSettingsCache();
         }
         
-        // Set hero data from settings
-        if (settings) {
-          setHeroData({
-            title: settings.title,
-            subtitle: settings.subtitle,
-            description: settings.description,
-            useLogo: settings.useLogo !== false,
-            logoUrl: settings.logoUrl || '/kockys-logo.png'
-          });
-          
-        // Set video from hero settings
-        if (settings.backgroundVideo) {
-          // Check if it's an uploaded file or static file
-          if (settings.backgroundVideo.startsWith('/uploads/')) {
-            setHeroVideo(`${MEDIA_ORIGIN.replace('/uploads', '')}${settings.backgroundVideo}`);
-          } else {
-            // Static file in public directory
-            setHeroVideo(settings.backgroundVideo);
+        // Load hero settings
+        const settings = await getHeroSettingsAsync('home');
+        
+        // Load page content for video
+        const pageContent = await pageContentAPI.getBySlug('home');
+        
+        if (settings || pageContent) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Loaded home hero settings from API:', settings);
+            console.log('Loaded home page content:', pageContent);
           }
-          setVideoError(false);
-        } else {
-          // Use default video if no video is configured
-          setHeroVideo('/videos/home-hero.mp4');
-          setVideoError(false);
-        }
           
-          // Set background image from hero settings
-          if (settings.backgroundImage) {
-            // Check if it's an uploaded file or static file
-            if (settings.backgroundImage.startsWith('/uploads/')) {
-              setHeroBackground(`${MEDIA_ORIGIN.replace('/uploads', '')}${settings.backgroundImage}`);
+          // Set hero data from settings
+          if (settings) {
+            setHeroSettings(settings);
+            setHeroData({
+              title: settings.title,
+              subtitle: settings.subtitle,
+              description: settings.description,
+              useLogo: settings.useLogo !== false,
+              logoUrl: settings.logoUrl || '/kockys-logo.png'
+            });
+            
+            // Set video from hero settings
+            if (settings.backgroundVideo) {
+              // Check if it's an uploaded file or static file
+              if (settings.backgroundVideo.startsWith('/uploads/')) {
+                setHeroVideo(`${MEDIA_ORIGIN.replace('/uploads', '')}${settings.backgroundVideo}`);
+              } else {
+                // Static file in public directory
+                setHeroVideo(settings.backgroundVideo);
+              }
+              setVideoError(false);
             } else {
-              // Static file in public directory
-              setHeroBackground(settings.backgroundImage);
+              // Use default video if no video is configured
+              setHeroVideo('/videos/home-hero.mp4');
+              setVideoError(false);
+            }
+              
+              // Set background image from hero settings
+              if (settings.backgroundImage) {
+                // Check if it's an uploaded file or static file
+                if (settings.backgroundImage.startsWith('/uploads/')) {
+                  const backgroundUrl = `${MEDIA_ORIGIN.replace('/uploads', '')}${settings.backgroundImage}`;
+                  console.log('Setting hero background:', backgroundUrl);
+                  setHeroBackground(backgroundUrl);
+                } else {
+                  // Static file in public directory
+                  console.log('Setting hero background (static):', settings.backgroundImage);
+                  setHeroBackground(settings.backgroundImage);
+                }
+              }
+          }
+          
+          // Set video/image from page content (fallback)
+          if (pageContent && !settings?.backgroundVideo) {
+            if (pageContent.heroVideo) {
+              setHeroVideo(`${MEDIA_ORIGIN.replace('/uploads', '')}${pageContent.heroVideo}`);
+              setVideoError(false);
+            }
+            if (pageContent.heroImage && !settings?.backgroundImage) {
+              setHeroBackground(`${MEDIA_ORIGIN.replace('/uploads', '')}${pageContent.heroImage}`);
             }
           }
+          
+          setHeroLoaded(true);
+        } else {
+          // If no settings are loaded, use default video
+          setHeroVideo('/videos/home-hero.mp4');
+          setVideoError(false);
+          setHeroLoaded(true);
         }
-        
-        // Set video/image from page content (fallback)
-        if (pageContent && !settings?.backgroundVideo) {
-          if (pageContent.heroVideo) {
-            setHeroVideo(`${MEDIA_ORIGIN.replace('/uploads', '')}${pageContent.heroVideo}`);
-            setVideoError(false);
-          }
-          if (pageContent.heroImage && !settings?.backgroundImage) {
-            setHeroBackground(`${MEDIA_ORIGIN.replace('/uploads', '')}${pageContent.heroImage}`);
-          }
-        }
-        
+      } catch (error) {
+        console.error('Error loading hero settings:', error);
         setHeroLoaded(true);
-      } else {
-        // If no settings are loaded, use default video
-        setHeroVideo('/videos/home-hero.mp4');
-        setVideoError(false);
-        setHeroLoaded(true);
+      } finally {
+        setHeroLoading(false);
       }
     };
 
@@ -175,201 +191,84 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section with Video/Image Background */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Background Media Layer */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          {!videoError && heroVideo ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              loop
-              muted={isMuted}
-              playsInline
-              onError={() => {
-                // Don't use hardcoded fallback - just show error
-                setVideoError(true);
-              }}
-              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-            >
-              <source src={heroVideo} type="video/mp4" />
-              <source src={heroVideo.replace('.mp4', '.webm')} type="video/webm" />
-            </video>
-          ) : (
-            <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
-              style={{ 
-                backgroundImage: heroBackground.startsWith('#') 
-                  ? undefined 
-                  : `url(${heroBackground})`,
-                backgroundColor: heroBackground.startsWith('#') ? heroBackground : undefined
-              }}
-            />
-          )}
-        </div>
-        
-        {/* Overlay with adjustable opacity */}
-        <div 
-          className="absolute inset-0 bg-black transition-opacity duration-300 z-[1] pointer-events-none"
-          style={{ opacity: overlayOpacity }}
+      {!heroLoading && heroSettings?.backgroundVideo ? (
+        // Video background
+        <HeroSection
+          title={heroData.title}
+          subtitle={heroData.subtitle}
+          description={heroData.description}
+          backgroundVideo={heroSettings.backgroundVideo}
+          mediaPreference="video"
+          overlayOpacity={overlayOpacity}
+          height="full"
+          showLogo={heroData.useLogo}
+          logoUrl={heroData.logoUrl}
+          ctaButtons={[
+            {
+              text: "View Our Menu",
+              href: "/menu",
+              variant: "default"
+            },
+            {
+              text: "Make a Reservation",
+              href: "/reservations",
+              variant: "outline"
+            }
+          ]}
         />
+      ) : !heroLoading && heroSettings?.backgroundImage ? (
+        // Image background
+        <HeroSection
+          title={heroData.title}
+          subtitle={heroData.subtitle}
+          description={heroData.description}
+          backgroundImage={heroSettings.backgroundImage}
+          mediaPreference="image"
+          overlayOpacity={overlayOpacity}
+          height="full"
+          showLogo={heroData.useLogo}
+          logoUrl={heroData.logoUrl}
+          ctaButtons={[
+            {
+              text: "View Our Menu",
+              href: "/menu",
+              variant: "default"
+            },
+            {
+              text: "Make a Reservation",
+              href: "/reservations",
+              variant: "outline"
+            }
+          ]}
+        />
+      ) : (
+        // Fallback: gradient background (loading or no media)
+        <HeroSection
+          title={heroData.title}
+          subtitle={heroData.subtitle}
+          description={heroData.description}
+          backgroundImage={undefined}
+          backgroundVideo={undefined}
+          mediaPreference="auto"
+          overlayOpacity={overlayOpacity}
+          height="full"
+          showLogo={heroData.useLogo}
+          logoUrl={heroData.logoUrl}
+          ctaButtons={[
+            {
+              text: "View Our Menu",
+              href: "/menu",
+              variant: "default"
+            },
+            {
+              text: "Make a Reservation",
+              href: "/reservations",
+              variant: "outline"
+            }
+          ]}
+        />
+      )}
 
-        {/* Video Controls */}
-        {!videoError && heroVideo && (
-          <div className="absolute bottom-4 right-4 z-20 flex gap-2 pointer-events-auto">
-            <Button
-              size="icon"
-              variant="secondary"
-              className="bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
-              onClick={() => {
-                if (videoRef.current) {
-                  if (isVideoPlaying) {
-                    videoRef.current.pause();
-                  } else {
-                    videoRef.current.play();
-                  }
-                  setIsVideoPlaying(!isVideoPlaying);
-                }
-              }}
-            >
-              {isVideoPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
-              onClick={() => {
-                if (videoRef.current) {
-                  videoRef.current.muted = !isMuted;
-                  setIsMuted(!isMuted);
-                }
-              }}
-            >
-              {isMuted ? (
-                <VolumeX className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        )}
-
-
-
-        {/* Content */}
-        <motion.div 
-          className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto pointer-events-auto"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
-        >
-          {heroData.useLogo && heroData.logoUrl ? (
-            <motion.div 
-              className="mb-6 flex justify-center"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-            >
-              <div className="relative">
-                <img 
-                  src={
-                    heroData.logoUrl.startsWith('http') 
-                      ? heroData.logoUrl 
-                      : heroData.logoUrl.startsWith('/uploads/') 
-                        ? `${MEDIA_ORIGIN.replace('/uploads', '')}${heroData.logoUrl}`  // Web server serves uploaded files
-                        : heroData.logoUrl  // Static file in public directory
-                  }
-                  alt="Kocky's Logo" 
-                  className="h-40 md:h-52 lg:h-64 w-auto"
-                  style={{ 
-                    filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.7))'
-                  }}
-                  onError={(e: any) => {
-                    e.currentTarget.style.display = 'none';
-                    if (typeof document !== 'undefined') {
-                      const fallback = document.getElementById('hero-text-fallback');
-                      if (fallback) fallback.style.display = 'block';
-                    }
-                  }}
-                />
-              </div>
-            </motion.div>
-          ) : (
-            <motion.h1 
-              id="hero-text-fallback"
-              className="text-5xl md:text-7xl font-bold mb-6"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-            >
-              {heroData.title ? decodeHtmlEntities(heroData.title) : "Welcome to Kocky's"}
-            </motion.h1>
-          )}
-          
-          {heroData.subtitle && (
-            <motion.h2 
-              className="text-2xl md:text-3xl mb-4 text-orange-400"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-            >
-              {decodeHtmlEntities(heroData.subtitle)}
-            </motion.h2>
-          )}
-          
-          <motion.p 
-            className="text-xl md:text-2xl mb-8 text-gray-200"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-          >
-            {decodeHtmlEntities(heroData.description)}
-          </motion.p>
-
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-          >
-            <Link href="/menu">
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full transition-colors flex items-center gap-2"
-                onClick={() => analytics.event('click', 'View Menu Button')}
-              >
-                View Our Menu <ArrowRight className="w-5 h-5" />
-              </motion.button>
-            </Link>
-            
-            <Link href="/reservations">
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-white/10 backdrop-blur hover:bg-white/20 text-white font-bold rounded-full border-2 border-white/50 transition-colors"
-                onClick={() => analytics.event('click', 'Make Reservation Button')}
-              >
-                Make a Reservation
-              </motion.button>
-            </Link>
-          </motion.div>
-        </motion.div>
-
-        {/* Scroll Indicator */}
-        <motion.div 
-          className="absolute bottom-10 left-1/2 transform -translate-x-1/2"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        >
-          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white rounded-full mt-2" />
-          </div>
-        </motion.div>
-      </section>
 
       {/* Featured Menu Items */}
       {featuredItems?.menuItems && featuredItems.menuItems.length > 0 && (

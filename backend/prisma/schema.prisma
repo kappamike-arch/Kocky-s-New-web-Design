@@ -377,18 +377,14 @@ model EmailAccount {
 }
 
 model EmailTemplate {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  subject     String
-  htmlContent String
-  textContent String?
-  variables   Json
-  logoUrl     String?
-  footerText  String?
-  paymentLink String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  subject   String
+  body      String
+  sender    String?
+  category  String   @default("general")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model InquiryNote {

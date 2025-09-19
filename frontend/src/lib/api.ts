@@ -95,5 +95,12 @@ export const apiHelpers = {
     api.delete<T>(url, config).then(res => res.data),
 };
 
+// Contact API functions
+export const contactAPI = {
+  submit: (data: any) => apiHelpers.post('/contact', data),
+  getAll: () => apiHelpers.get('/contact'),
+  getById: (id: string) => apiHelpers.get(`/contact/${id}`),
+};
+
 // Export the configured axios instance as default
 export default api;

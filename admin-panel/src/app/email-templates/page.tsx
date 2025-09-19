@@ -13,6 +13,7 @@ import { api } from '@/lib/api/client';
 interface EmailTemplate {
   id: string;
   name: string;
+  category: string;
   subject: string;
   htmlContent: string;
   textContent?: string;
@@ -55,6 +56,7 @@ export default function EmailTemplatesPage() {
         {
           id: 'mock-inquiry',
           name: 'Inquiry Confirmation',
+          category: 'inquiry',
           subject: 'Thanks for your inquiry — we got it!',
           htmlContent: '<h1>Thank you for your inquiry!</h1>',
           variables: ['customerName', 'serviceName'],
@@ -63,6 +65,7 @@ export default function EmailTemplatesPage() {
         {
           id: 'mock-quote',
           name: 'Quote Request Confirmation',
+          category: 'quote',
           subject: 'Your quote from Kocky\'s (##{{quoteNumber}})',
           htmlContent: '<h1>Your quote is ready!</h1>',
           variables: ['customerName', 'quoteNumber', 'totalAmount'],
@@ -71,6 +74,7 @@ export default function EmailTemplatesPage() {
         {
           id: 'mock-mobile-bar',
           name: 'Mobile Bar Booking Confirmation',
+          category: 'mobileBar',
           subject: 'Mobile Bar booking received',
           htmlContent: '<h1>Your Mobile Bar booking is confirmed!</h1>',
           variables: ['customerName', 'eventDate', 'eventTime', 'eventLocation'],
@@ -234,9 +238,14 @@ export default function EmailTemplatesPage() {
                     <h3 className="font-semibold capitalize">
                       {template.name.replace(/_/g, ' ')}
                     </h3>
-                    <p className="text-sm text-gray-500">
-                      {template.isActive ? 'Active' : 'Inactive'}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded">
+                        {template.category || 'general'}
+                      </span>
+                      <p className="text-sm text-gray-500">
+                        {template.isActive ? 'Active' : 'Inactive'}
+                      </p>
+                    </div>
                   </div>
                 </div>
                 {template.isActive && (

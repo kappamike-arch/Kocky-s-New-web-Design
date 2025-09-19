@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast';
 interface EmailTemplate {
   id: string;
   name: string;
+  category: string;
   subject: string;
   body: string;
   variables: string[];
@@ -25,6 +26,7 @@ export default function NewEmailTemplatePage() {
   
   const [template, setTemplate] = useState<Partial<EmailTemplate>>({
     name: '',
+    category: 'general',
     subject: '',
     body: '',
     variables: []
@@ -120,6 +122,24 @@ export default function NewEmailTemplatePage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Booking Confirmation"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category *
+                </label>
+                <select
+                  value={template.category || 'general'}
+                  onChange={(e) => setTemplate({ ...template, category: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="general">General</option>
+                  <option value="inquiry">Inquiry</option>
+                  <option value="quote">Quote</option>
+                  <option value="mobileBar">Mobile Bar</option>
+                  <option value="booking">Booking</option>
+                  <option value="catering">Catering</option>
+                </select>
               </div>
 
               <div>

@@ -37,3 +37,9 @@ async function updateHeroSettings() {
 }
 
 updateHeroSettings();
+
+
+
+
+
+

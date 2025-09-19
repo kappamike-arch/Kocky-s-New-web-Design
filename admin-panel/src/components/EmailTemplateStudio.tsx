@@ -160,8 +160,12 @@ function EditorShell({ title, defaults, templateId, onSave }) {
   const [brand, setBrand] = useState(defaults.brand);
   const [sections, setSections] = useState(defaults.sections);
   const [theme, setTheme] = useState(defaults.theme);
+  const [category, setCategory] = useState(templateId);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Debug logging
+  console.log('EditorShell rendering with templateId:', templateId, 'category:', category);
 
   const html = useMemo(() => renderEmailHTML({ brand, sections, theme }), [brand, sections, theme]);
 
@@ -173,7 +177,7 @@ function EditorShell({ title, defaults, templateId, onSave }) {
       if (onSave) {
         setIsSaving(true);
         try {
-          await onSave({ brand, sections, theme });
+          await onSave({ brand, sections, theme, category });
           setHasUnsavedChanges(false);
         } catch (error) {
           console.error('Auto-save failed:', error);
@@ -246,7 +250,7 @@ function EditorShell({ title, defaults, templateId, onSave }) {
     if (onSave) {
       setIsSaving(true);
       try {
-        await onSave({ brand, sections, theme });
+        await onSave({ brand, sections, theme, category });
         setHasUnsavedChanges(false);
         alert('Template saved successfully!');
       } catch (error) {
@@ -321,6 +325,27 @@ function EditorShell({ title, defaults, templateId, onSave }) {
               onChange={(e) => updateState(() => setBrand({ ...brand, subject: e.target.value }))}
               className="w-full rounded-xl border border-slate-300 px-3 py-2"
             />
+          </Field>
+          <Field label="Category">
+            <select
+              value={category}
+              onChange={(e) => {
+                const newCategory = e.target.value;
+                setCategory(newCategory);
+                setHasUnsavedChanges(true);
+                // Update the URL to reflect the new category
+                window.history.pushState({}, '', `/admin/email-studio/${newCategory}/`);
+                // Reload the page to load the new template
+                window.location.reload();
+              }}
+              className="w-full rounded-xl border border-slate-300 px-3 py-2"
+            >
+              <option value="inquiry">Inquiry</option>
+              <option value="quote">Quote</option>
+              <option value="mobileBar">Mobile Bar</option>
+              <option value="booking">Booking</option>
+              <option value="catering">Catering</option>
+            </select>
           </Field>
           <Field label="Sender name">
             <input
@@ -527,6 +552,9 @@ export default function EmailTemplateStudio({ templateId }: EmailTemplateStudioP
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // DEBUG: Add a very obvious element to confirm component is rendering
+  console.log('🚨🚨🚨 EmailTemplateStudio component rendering with templateId:', templateId, 'at', new Date().toLocaleTimeString());
+
   // Fetch template data from server
   useEffect(() => {
     const fetchTemplate = async () => {
@@ -601,7 +629,23 @@ export default function EmailTemplateStudio({ templateId }: EmailTemplateStudioP
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-10 backdrop-blur bg-white/80 border-b border-slate-200">
+      {/* DEBUG BANNER - This should be visible if component is rendering */}
+      <div style={{
+        backgroundColor: 'red',
+        color: 'white',
+        padding: '20px',
+        textAlign: 'center',
+        fontSize: '18px',
+        fontWeight: 'bold',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999
+      }}>
+        🚨 DEBUG: EmailTemplateStudio Component is Rendering! TemplateId: {templateId} | Time: {new Date().toLocaleTimeString()}
+      </div>
+      <header className="sticky top-0 z-10 backdrop-blur bg-white/80 border-b border-slate-200" style={{marginTop: '80px'}}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <div className="text-xl font-semibold">Kocky's Email Template Studio</div>

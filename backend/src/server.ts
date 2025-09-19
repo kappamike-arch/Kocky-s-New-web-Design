@@ -217,7 +217,8 @@ const startServer = async () => {
     app.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
       logger.info(`Server is running on 0.0.0.0:${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
-      logger.info(`Frontend URL: ${process.env.FRONTEND_URL}`);
+      logger.info(`Public Base URL: ${PUBLIC_BASE_URL}`);
+      logger.info(`API Base URL: ${PUBLIC_BASE_URL}/api`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);

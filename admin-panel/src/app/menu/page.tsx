@@ -4,14 +4,12 @@ import { useState, useRef } from 'react';
 import { UPLOADS_URL } from '@/lib/config';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UPLOADS_URL } from '@/lib/config';
 import { menu } from '@/lib/api/menu';
 import {
   Plus, Edit, Trash2, Image, Star, DollarSign, Clock,
   Search, Filter, Upload, X, Check, AlertCircle, Coffee
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { UPLOADS_URL } from '@/lib/config';
 
 export default function MenuManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');

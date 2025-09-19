@@ -63,13 +63,13 @@ export default function MobileBarPage() {
         // Load hero settings
         const heroSettings = await getHeroSettingsAsync('mobile');
         if (heroSettings) {
-          const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL || 'https://staging.kockys.com/uploads';
+          const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL || 'https://staging.kockys.com';
           setHeroData({
             title: heroSettings.useLogo ? '' : (heroSettings.title || 'Mobile Bar Service'),
             subtitle: heroSettings.subtitle || 'We Come to You',
             description: heroSettings.description || 'Bringing the party to you with professional bartending and premium drinks',
-            backgroundImage: heroSettings.backgroundImage ? `${MEDIA_BASE_URL.replace('/uploads', '')}${heroSettings.backgroundImage}` : '',
-            backgroundVideo: heroSettings.backgroundVideo ? `${MEDIA_BASE_URL.replace('/uploads', '')}${heroSettings.backgroundVideo}` : undefined,
+            backgroundImage: heroSettings.backgroundImage || '',
+            backgroundVideo: heroSettings.backgroundVideo || undefined,
             mediaPreference: heroSettings.mediaPreference || 'auto',
           });
         }

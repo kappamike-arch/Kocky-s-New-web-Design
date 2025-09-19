@@ -17,9 +17,9 @@ export const API_PREFIX = '/api';
 // Full API URL
 export const API_URL = `${API_BASE_URL}${API_PREFIX}`;
 
-// Media/Uploads base URL
+// Media/Uploads base URL - use Apache proxy for file serving
 export const MEDIA_BASE_URL =
-  process.env.NEXT_PUBLIC_MEDIA_BASE_URL || `${PUBLIC_BASE_URL}`;
+  process.env.NEXT_PUBLIC_MEDIA_BASE_URL || 'https://staging.kockys.com';
 
 // Uploads prefix
 export const UPLOADS_PREFIX = '/uploads';
@@ -53,3 +53,9 @@ if (IS_DEVELOPMENT) {
   console.log('  Admin Base URL:', ADMIN_BASE_URL);
   console.log('  Prisma Studio URL:', PRISMA_STUDIO_URL);
 }
+
+
+
+
+
+

@@ -7,7 +7,7 @@ const router = Router();
 
 // Email Template Studio compatible routes (no auth required for studio)
 // These must come BEFORE the authentication middleware and generic routes
-router.get('/studio/:templateId', emailTemplateController.getTemplateStudioData);
+router.get('/studio/:templateId', emailTemplateController.getTemplateStudio);
 router.put('/studio/:templateId', emailTemplateController.saveTemplateStudioData);
 
 // Simple test route

@@ -1,13 +1,16 @@
 "use client";
 
+import { use } from "react";
 import EmailTemplateStudio from "@/components/EmailTemplateStudio";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     templateId: string;
-  };
+  }>;
 }
 
 export default function EmailStudioTemplatePage({ params }: PageProps) {
-  return <EmailTemplateStudio templateId={params.templateId} />;
+  const { templateId } = use(params);
+  return <EmailTemplateStudio templateId={templateId} />;
 }
+

@@ -4,6 +4,25 @@ const nextConfig = {
   trailingSlash: true,            // fix redirect loop with Nginx
   // assetPrefix is not usually needed; uncomment only if _next assets 404
   // assetPrefix: '/admin',
+  // Fix WebSocket HMR for staging domain
+  allowedDevOrigins: ['staging.kockys.com'],
+  // Performance optimizations
+  compress: true,
+  poweredByHeader: false,
+  // Fix font loading issues
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'framer-motion', 'react-hot-toast'],
+  },
+  // WebSocket configuration for HMR
+  webpack: (config, { dev, isServer }) => {
+    if (dev && !isServer) {
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300,
+      };
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       // External image sources

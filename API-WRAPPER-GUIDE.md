@@ -288,3 +288,9 @@ const userData = await apiHelpers.get('/auth/me');
 ```
 
 This API wrapper system provides a robust, maintainable foundation for all API communications in the Kocky's website! 🎉
+
+
+
+
+
+

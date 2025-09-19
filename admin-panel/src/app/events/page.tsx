@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { UPLOADS_URL } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 import { Plus, Edit, Trash2, Eye, EyeOff, Calendar, MapPin, Users, Clock } from 'lucide-react';
-import { UPLOADS_URL } from '@/lib/config';
 import { getEvents, deleteEvent, toggleEventPublish, type Event } from '../../lib/api/events';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';

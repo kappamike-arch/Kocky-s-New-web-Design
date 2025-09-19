@@ -4,8 +4,21 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, Image, Video, Trash2, CheckCircle, AlertCircle, X, FileUp, Eye, RefreshCw, Edit3, Save, Settings, Monitor } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
-import { UPLOADS_URL } from '@/lib/config';
+import { UPLOADS_URL, MEDIA_BASE_URL } from '@/lib/config';
 const Cookies = require('js-cookie');
+
+// Helper function to construct correct media URLs
+function getMediaUrl(filePath: string): string {
+  if (!filePath) return '';
+  
+  // If path already starts with /uploads/, use MEDIA_BASE_URL directly
+  if (filePath.startsWith('/uploads/')) {
+    return `${MEDIA_BASE_URL}${filePath}`;
+  }
+  
+  // If path doesn't start with /uploads/, use UPLOADS_URL
+  return `${UPLOADS_URL}${filePath}`;
+}
 
 const HERO_SECTIONS = [
   { id: 'home', name: 'Home Page', imagePath: '/uploads/images/home-hero.jpg', videoPath: '/uploads/videos/home-hero.mp4' },
@@ -126,12 +139,13 @@ export default function MediaManagementPage() {
 
         // Check for existing image
         try {
-          const imageResponse = await fetch(`${UPLOADS_URL}${section.imagePath}`, { method: 'HEAD' });
+          const imageUrl = getMediaUrl(section.imagePath);
+          const imageResponse = await fetch(imageUrl, { method: 'HEAD' });
           if (imageResponse.ok) {
             setUploadedFiles(prev => ({
               ...prev,
               [`${section.id}-image`]: { 
-                url: `${UPLOADS_URL}${section.imagePath}`,
+                url: imageUrl,
                 timestamp: Date.now()
               }
             }));
@@ -142,12 +156,13 @@ export default function MediaManagementPage() {
 
         // Check for existing video
         try {
-          const videoResponse = await fetch(`${UPLOADS_URL}${section.videoPath}`, { method: 'HEAD' });
+          const videoUrl = getMediaUrl(section.videoPath);
+          const videoResponse = await fetch(videoUrl, { method: 'HEAD' });
           if (videoResponse.ok) {
             setUploadedFiles(prev => ({
               ...prev,
               [`${section.id}-video`]: { 
-                url: `${UPLOADS_URL}${section.videoPath}`,
+                url: videoUrl,
                 timestamp: Date.now()
               }
             }));
@@ -217,14 +232,14 @@ export default function MediaManagementPage() {
         // Use backend API for video uploads
         const { heroSettingsAPI } = await import('../../lib/api/hero-settings');
         const result = await heroSettingsAPI.uploadVideo(sectionId, file);
-        fileUrl = `${UPLOADS_URL}${result.videoUrl}`;
+        fileUrl = getMediaUrl(result.videoUrl);
       } else {
         // Use backend API for image uploads (same as videos)
         const { heroSettingsAPI } = await import('../../lib/api/hero-settings');
         console.log(`🖼️ Uploading image for ${sectionId}:`, file.name, file.type, file.size);
         const result = await heroSettingsAPI.uploadImage(sectionId, file);
         console.log(`✅ Image upload result for ${sectionId}:`, result);
-        fileUrl = `${UPLOADS_URL}${result.imageUrl}`;
+        fileUrl = getMediaUrl(result.imageUrl);
       }
       
       // Update uploaded files with the new file URL

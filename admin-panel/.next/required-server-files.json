@@ -5,7 +5,6 @@
       "NEXT_PUBLIC_API_URL": "https://staging.kockys.com/api",
       "NEXT_PUBLIC_ADMIN_SECRET": "admin-secret-key-change-this"
     },
-    "webpack": null,
     "eslint": {
       "ignoreDuringBuilds": true
     },
@@ -27,7 +26,7 @@
       "jsx",
       "js"
     ],
-    "poweredByHeader": true,
+    "poweredByHeader": false,
     "compress": true,
     "images": {
       "deviceSizes": [
@@ -62,7 +61,30 @@
       "dangerouslyAllowSVG": false,
       "contentSecurityPolicy": "script-src 'none'; frame-src 'none'; sandbox;",
       "contentDispositionType": "attachment",
-      "remotePatterns": [],
+      "remotePatterns": [
+        {
+          "protocol": "https",
+          "hostname": "images.unsplash.com"
+        },
+        {
+          "protocol": "https",
+          "hostname": "lh3.googleusercontent.com"
+        },
+        {
+          "protocol": "https",
+          "hostname": "avatars.githubusercontent.com"
+        },
+        {
+          "protocol": "https",
+          "hostname": "staging.kockys.com",
+          "pathname": "/uploads/**"
+        },
+        {
+          "protocol": "https",
+          "hostname": "kockys.com",
+          "pathname": "/uploads/**"
+        }
+      ],
       "unoptimized": false
     },
     "devIndicators": {
@@ -102,6 +124,9 @@
       }
     },
     "outputFileTracingRoot": "/home/stagingkockys/Kocky's New Web Design with Back end/Kocky-s-New-web-Design/Kocky-s-New-web-Design",
+    "allowedDevOrigins": [
+      "staging.kockys.com"
+    ],
     "experimental": {
       "useSkewCookie": false,
       "cacheLife": {
@@ -208,6 +233,8 @@
       "optimizeRouterScrolling": false,
       "optimizePackageImports": [
         "lucide-react",
+        "framer-motion",
+        "react-hot-toast",
         "date-fns",
         "lodash-es",
         "ramda",

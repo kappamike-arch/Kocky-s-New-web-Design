@@ -160,6 +160,7 @@ function EditorShell({ title, defaults }) {
   const [brand, setBrand] = useState(defaults.brand);
   const [sections, setSections] = useState(defaults.sections);
   const [theme, setTheme] = useState(defaults.theme);
+  const [category, setCategory] = useState("inquiry");
 
   const html = useMemo(() => renderEmailHTML({ brand, sections, theme }), [brand, sections, theme]);
 
@@ -222,6 +223,19 @@ function EditorShell({ title, defaults }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+      {/* DEBUG BANNER */}
+      <div style={{
+        backgroundColor: 'green',
+        color: 'white',
+        padding: '10px',
+        textAlign: 'center',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        gridColumn: '1 / -1',
+        marginBottom: '20px'
+      }}>
+        🎯 DEBUG: EmailStudio page.tsx component is rendering! Category dropdown should be visible.
+      </div>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold">{title}</h2>
@@ -239,6 +253,19 @@ function EditorShell({ title, defaults }) {
               onChange={(e) => setBrand({ ...brand, subject: e.target.value })}
               className="w-full rounded-xl border border-slate-300 px-3 py-2"
             />
+          </Field>
+          <Field label="Category">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 px-3 py-2"
+            >
+              <option value="inquiry">Inquiry</option>
+              <option value="quote">Quote</option>
+              <option value="mobileBar">Mobile Bar</option>
+              <option value="booking">Booking</option>
+              <option value="catering">Catering</option>
+            </select>
           </Field>
           <Field label="Sender name">
             <input

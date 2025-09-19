@@ -17,12 +17,9 @@ function getLogoUrl(logoUrl?: string): string {
     return logoUrl;
   }
   
-  // Get media base URL from environment
-  const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL || '/uploads';
-  
-  // If it starts with /uploads/, it's served by the backend
+  // If it starts with /uploads/, serve it through Apache (not backend)
   if (logoUrl.startsWith('/uploads/')) {
-    return `${MEDIA_BASE_URL.replace('/uploads', '')}${logoUrl}`;
+    return logoUrl; // Let Apache serve it directly via the proxy
   }
   
   // If it starts with /images/ or /videos/, it's a static file in public directory
@@ -42,12 +39,9 @@ function getFullMediaUrl(mediaUrl: string): string {
     return mediaUrl;
   }
   
-  // Get media base URL from environment
-  const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL || '/uploads';
-  
-  // If it starts with /uploads/, it's served by the backend
+  // If it starts with /uploads/, serve it through Apache (not backend)
   if (mediaUrl.startsWith('/uploads/')) {
-    return `${MEDIA_BASE_URL.replace('/uploads', '')}${mediaUrl}`;
+    return mediaUrl; // Let Apache serve it directly via the proxy
   }
   
   // If it starts with /images/ or /videos/, it's a static file in public directory
@@ -125,10 +119,28 @@ export function HeroSection({
   useEffect(() => {
     // Auto-play video when component mounts or video source changes
     if (videoRef.current && backgroundVideo && !videoError) {
-      videoRef.current.play().catch(err => {
-        console.error('Video autoplay failed:', err);
-        setIsVideoPlaying(false);
-      });
+      const video = videoRef.current;
+      
+      // Wait for video to be ready
+      const handleCanPlay = () => {
+        video.play().catch(err => {
+          console.error('Video autoplay failed:', err);
+          setIsVideoPlaying(false);
+        });
+      };
+      
+      // If video is already ready, play immediately
+      if (video.readyState >= 3) { // HAVE_FUTURE_DATA or higher
+        handleCanPlay();
+      } else {
+        // Otherwise wait for it to be ready
+        video.addEventListener('canplay', handleCanPlay, { once: true });
+        
+        // Cleanup listener if component unmounts
+        return () => {
+          video.removeEventListener('canplay', handleCanPlay);
+        };
+      }
     }
   }, [backgroundVideo, videoError]);
 
@@ -143,12 +155,22 @@ export function HeroSection({
     if (videoRef.current) {
       if (isVideoPlaying) {
         videoRef.current.pause();
+        setIsVideoPlaying(false);
       } else {
-        videoRef.current.play().catch(err => {
-          console.error('Video play failed:', err);
-        });
+        // Try to play the video
+        const playPromise = videoRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            // Video started playing successfully
+            setIsVideoPlaying(true);
+          }).catch(err => {
+            console.error('Video play failed:', err);
+            // If autoplay is blocked, show play button
+            setIsVideoPlaying(false);
+          });
+        }
       }
-      setIsVideoPlaying(!isVideoPlaying);
     }
   };
 
@@ -261,12 +283,22 @@ export function HeroSection({
             return (
               <video
                 ref={videoRef}
-                key={selectedMedia} // Force re-render when source changes
+                key={`video-${selectedMedia}`} // Stable key to prevent DOM removal
                 autoPlay
                 loop
                 muted={isMuted}
                 playsInline
+                preload="metadata"
                 onError={handleVideoError}
+                onLoadedData={() => {
+                  // Ensure video plays when data is loaded
+                  if (videoRef.current && isVideoPlaying) {
+                    videoRef.current.play().catch(err => {
+                      console.error('Video autoplay failed on load:', err);
+                      setIsVideoPlaying(false);
+                    });
+                  }
+                }}
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{ zIndex: 0 }}
               >

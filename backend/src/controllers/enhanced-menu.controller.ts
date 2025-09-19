@@ -547,8 +547,8 @@ export const getMenuForFrontend = async (req: Request, res: Response, next: Next
   }
 };
 
-// Upload menu item image
-export const uploadMenuItemImage = async (req: AuthRequest, res: Response, next: NextFunction) => {
+// Upload menu item image (duplicate function)
+export const uploadMenuItemImageV2 = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     

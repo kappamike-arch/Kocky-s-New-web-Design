@@ -18,8 +18,8 @@ export interface HeroSettings {
   description?: string;
 }
 
-// API base URL - use relative path for production
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+// API base URL - use Apache proxy
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://staging.kockys.com/api';
 
 // Cache for hero settings to avoid excessive API calls
 interface CachedSettings {

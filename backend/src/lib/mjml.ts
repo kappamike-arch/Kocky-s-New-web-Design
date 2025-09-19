@@ -1,5 +1,4 @@
 import mjml from 'mjml';
-import { UPLOADS_URL } from '@/lib/config';
 
 export interface MJMLOptions {
   minify?: boolean;

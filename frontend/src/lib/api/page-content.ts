@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // API base (should include /api) and media origin (no /api)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-const MEDIA_ORIGIN = process.env.NEXT_PUBLIC_MEDIA_URL || '';
+const MEDIA_ORIGIN = process.env.NEXT_PUBLIC_MEDIA_URL || 'https://staging.kockys.com';
 
 export interface PageContent {
   id: string;
