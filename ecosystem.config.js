@@ -19,7 +19,11 @@ module.exports = {
         SMTP_USER: 'Mike@Kockys.com',
         SMTP_PASS: 'znzypthvyzpkfsnv',
         JWT_SECRET: 'your-super-secret-jwt-key-change-this-in-production',
-        JWT_EXPIRE: '7d'
+        JWT_EXPIRE: '7d',
+        STRIPE_SECRET_KEY: 'sk_test_your_stripe_secret_key_here',
+        STRIPE_WEBHOOK_SECRET: 'whsec_your_webhook_secret_here',
+        STRIPE_PUBLISHABLE_KEY: 'pk_test_your_publishable_key_here',
+        APP_BASE_URL: 'https://staging.kockys.com'
       }
     },
     {

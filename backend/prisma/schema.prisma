@@ -801,7 +801,10 @@ enum QuoteStatus {
   REJECTED
   EXPIRED
   REVISED
+  DEPOSIT_PAID
   PAID
+  CANCELED
+  REFUNDED
 }
 
 enum EmailType {
