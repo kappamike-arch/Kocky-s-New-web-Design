@@ -37,6 +37,7 @@ import analyticsRoutes from './routes/analytics.routes';
 import jobsRoutes from './routes/jobs.routes';
 import eventsRoutes from './routes/events.routes';
 import emailRoutes from './routes/email';
+import graphEmailRoutes from './routes/graphEmail.routes';
 import { emailScheduler } from './services/emailScheduler';
 
 // Load environment variables
@@ -149,6 +150,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/email', emailRoutes);
+app.use('/api/graph-email', graphEmailRoutes);
 
 // Welcome route
 app.get('/api', (req: Request, res: Response) => {
