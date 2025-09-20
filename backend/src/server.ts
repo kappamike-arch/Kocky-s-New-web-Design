@@ -9,6 +9,7 @@ import { PrismaClient } from '@prisma/client';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 import { sanitizeMiddleware } from './middleware/sanitize';
+import { requestIdMiddleware } from './middleware/requestId';
 
 // Import routes
 import authRoutes from './routes/simple-auth.routes';
@@ -40,6 +41,7 @@ import emailRoutes from './routes/email';
 import graphEmailRoutes from './routes/graphEmail.routes';
 import healthRoutes from './routes/health.routes';
 import stripeRoutes from './routes/stripe.routes';
+import paymentRoutes from './routes/payment.routes';
 import { emailScheduler } from './services/emailScheduler';
 
 // Load environment variables
@@ -88,6 +90,9 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// Request ID middleware for tracing
+app.use(requestIdMiddleware);
+
 // Rate limiting - disabled for local development
 // Uncomment for production
 // const limiter = rateLimit({
@@ -96,6 +101,9 @@ app.use(cors(corsOptions));
 //   message: 'Too many requests from this IP, please try again later.'
 // });
 // app.use('/api/', limiter);
+
+// Stripe webhook endpoint needs raw body (mount before json parser)
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
 // Body limits to 10 MB
 app.use(express.json({ limit: '10mb' }));
@@ -154,6 +162,7 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/graph-email', graphEmailRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api', healthRoutes);
 
 // Welcome route

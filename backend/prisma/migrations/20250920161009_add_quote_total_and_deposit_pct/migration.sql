@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Quote" ADD COLUMN "depositPct" DECIMAL DEFAULT 0.2;
+ALTER TABLE "Quote" ADD COLUMN "stripeSessionId" TEXT;
+ALTER TABLE "Quote" ADD COLUMN "total" DECIMAL;

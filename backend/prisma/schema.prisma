@@ -293,6 +293,8 @@ model Quote {
   inquiryId        String
   quoteNumber      String         @unique
   amount           Decimal?
+  total            Decimal?
+  depositPct       Decimal?       @default(0.2)
   validUntil       DateTime?
   serviceDetails   String
   terms            String?
@@ -316,6 +318,7 @@ model Quote {
   depositType      String?
   paymentLink      String?
   stripePaymentId  String?
+  stripeSessionId  String?
   balanceDueDate   DateTime?
   gratuityRate     Decimal?       @default(0)
   pdfUrl           String?
