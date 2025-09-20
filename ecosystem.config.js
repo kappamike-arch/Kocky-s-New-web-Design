@@ -21,7 +21,7 @@ module.exports = {
         JWT_SECRET: 'your-super-secret-jwt-key-change-this-in-production',
         JWT_EXPIRE: '7d',
         STRIPE_SECRET_KEY: 'sk_test_51S4RSq7o9GBZIZ8HXoCue3I6aEsFmBjBfFLwXwCqvLR5F5adUNqHHHu5grt62dxxfALYeU0GQqSNUAuzgZLxlTNX00cAdGlbxu',
-        STRIPE_WEBHOOK_SECRET: '',
+        STRIPE_WEBHOOK_SECRET: 'whsec_gkmcELkt6g4Qf1Hs5qjUSrLoYtzbGhuL',
         STRIPE_PUBLISHABLE_KEY: 'pk_test_51S4RSq7o9GBZIZ8HQwLw2u67qdSjTrqKPrFOIvSJRAqvNx5SAMh6uQp2xbQQjZGhrkiwpfbqZiQeMNr0jGRcQKc700aXX6gLoe',
         APP_BASE_URL: 'https://staging.kockys.com'
       }
