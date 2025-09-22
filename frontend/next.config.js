@@ -44,7 +44,7 @@ const nextConfig = {
     // Legacy environment variables (deprecated - use centralized config)
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://staging.kockys.com/api',
     NEXT_PUBLIC_MEDIA_URL: process.env.NEXT_PUBLIC_MEDIA_URL || 'https://staging.kockys.com',
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S4RSq7o9GBZIZ8HQwLw2u67qdSjTrqKPrFOIvSJRAqvNx5SAMh6uQp2xbQQjZGhrkiwpfbqZiQeMNr0jGRcQKc700aXX6gLoe',
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   },
 };
 

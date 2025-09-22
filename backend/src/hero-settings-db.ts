@@ -146,6 +146,7 @@ export async function getAllHeroSettings(): Promise<HeroSettings[]> {
       logoUrl: fixLogoUrl(s.logoUrl, s.pageId),
       backgroundImage: s.backgroundImage || undefined,
       backgroundVideo: s.backgroundVideo || undefined,
+      mediaPreference: s.mediaPreference || undefined,
       title: s.title || undefined,
       subtitle: s.subtitle || undefined,
       description: s.description || undefined
@@ -353,6 +354,9 @@ export async function updateHeroSettings(pageId: string, settings: Partial<HeroS
     if (cleanedSettings.backgroundVideo === undefined) {
       updateData.backgroundVideo = null;
     }
+    if (cleanedSettings.mediaPreference === undefined) {
+      updateData.mediaPreference = null;
+    }
     
     const updated = await prisma.heroSettings.update({
       where: { pageId },
@@ -367,6 +371,7 @@ export async function updateHeroSettings(pageId: string, settings: Partial<HeroS
       logoUrl: updated.logoUrl || undefined,
       backgroundImage: updated.backgroundImage || undefined,
       backgroundVideo: updated.backgroundVideo || undefined,
+      mediaPreference: updated.mediaPreference || undefined,
       title: updated.title || undefined,
       subtitle: updated.subtitle || undefined,
       description: updated.description || undefined

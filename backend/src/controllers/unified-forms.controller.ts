@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../server';
 import { sendEmail } from '../utils/email';
+import o365EmailService from '../services/o365EmailService';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 import { ServiceType, InquiryStatus } from '@prisma/client';
@@ -136,45 +137,90 @@ export const submitForm = async (req: Request, res: Response, next: NextFunction
       });
     }
 
-    // Send email notifications
+    // Send emails using Office 365 service
+    let emailStatus = { adminSent: false, customerSent: false };
+    
     try {
-      // Admin notification
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@kockysbar.com';
-      await sendEmail({
-        to: adminEmail,
-        subject: `New ${formType.replace('-', ' ').toUpperCase()} Inquiry: ${name}`,
-        template: 'admin-notification',
-        data: {
-          inquiryType: formType,
-          customerName: name,
-          customerEmail: email,
-          customerPhone: phone,
-          eventDate: eventDate ? new Date(eventDate).toLocaleDateString() : 'Not specified',
-          eventTime: eventTime || 'Not specified',
-          eventLocation: eventLocation || 'Not specified',
-          guestCount: guestCount || 'Not specified',
-          message: message || specialRequests || 'No additional notes',
-          confirmationCode,
-          crmLink: `${process.env.ADMIN_URL || 'https://staging.kockys.com/admin'}/crm/inquiries/${inquiry.id}`
-        }
+      // Send internal admin notification
+      const adminEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #b22222; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">🔔 New ${formType.replace('-', ' ').toUpperCase()} Inquiry</h1>
+          </div>
+          <div style="padding: 20px; background-color: #f5f5f5; border-radius: 0 0 8px 8px;">
+            <p style="font-size: 16px; margin-bottom: 20px;">A new ${formType.replace('-', ' ')} inquiry has been submitted through the website:</p>
+            <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #b22222;">
+              <h3 style="margin-top: 0; color: #b22222;">Customer Information</h3>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin: 10px 0; font-size: 16px;"><strong>👤 Name:</strong> ${name}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📧 Email:</strong> ${email}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📞 Phone:</strong> ${phone || 'Not provided'}</li>
+                ${companyName ? `<li style="margin: 10px 0; font-size: 16px;"><strong>🏢 Company:</strong> ${companyName}</li>` : ''}
+              </ul>
+              <h3 style="color: #b22222; margin-top: 20px;">Event Details</h3>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📅 Event Date:</strong> ${eventDate ? new Date(eventDate).toLocaleDateString() : 'Not specified'}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>🕐 Event Time:</strong> ${eventTime || 'Not specified'}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📍 Location:</strong> ${eventLocation || 'Not specified'}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>👥 Guest Count:</strong> ${guestCount || 'Not specified'}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>💰 Budget:</strong> ${budget || 'Not specified'}</li>
+                ${packageType ? `<li style="margin: 10px 0; font-size: 16px;"><strong>📦 Package:</strong> ${packageType}</li>` : ''}
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📝 Special Requests:</strong> ${message || specialRequests || 'No additional notes'}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>🎫 Confirmation Code:</strong> <span style="color: #b22222; font-weight: bold; font-size: 18px;">${confirmationCode}</span></li>
+              </ul>
+            </div>
+            <p style="font-size: 16px; margin-bottom: 20px;"><strong>Action Required:</strong> Please review this inquiry and contact the customer to discuss details.</p>
+          </div>
+        </div>
+      `;
+
+      emailStatus.adminSent = await o365EmailService.sendEmail({
+        to: 'info@kockys.com',
+        subject: `New ${formType.replace('-', ' ').toUpperCase()} Inquiry - Kocky's Bar & Grill`,
+        html: adminEmailHtml,
       });
 
-      // Customer confirmation
-      await sendEmail({
+      // Send customer confirmation
+      const customerEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #b22222; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">Inquiry Received!</h1>
+          </div>
+          <div style="padding: 20px; background-color: #f5f5f5; border-radius: 0 0 8px 8px;">
+            <p style="font-size: 16px; margin-bottom: 20px;">Hi ${name},</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">Thank you for your interest in Kocky's Bar & Grill! We have received your ${formType.replace('-', ' ')} inquiry and will get back to you within 24-48 hours.</p>
+            <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #b22222;">
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📅 Event Date:</strong> ${eventDate ? new Date(eventDate).toLocaleDateString() : 'Not specified'}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>👥 Guest Count:</strong> ${guestCount || 'Not specified'}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>🎫 Confirmation Code:</strong> <span style="color: #b22222; font-weight: bold; font-size: 18px;">${confirmationCode}</span></li>
+              </ul>
+            </div>
+            <p style="font-size: 16px; margin-bottom: 20px;">We look forward to helping you plan a fantastic event!</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">If you have any immediate questions, please call us at <strong>(555) 123-4567</strong> or reply to this email.</p>
+            <p style="font-size: 16px;">Best regards,<br><strong>The Kocky's Team</strong></p>
+          </div>
+        </div>
+      `;
+
+      emailStatus.customerSent = await o365EmailService.sendEmail({
         to: email,
-        subject: `We've Received Your ${formType === 'reservation' ? 'Reservation' : 'Booking'} Request - Kocky's`,
-        template: 'customer-confirmation',
-        data: {
-          name,
-          serviceType: formType.replace('-', ' '),
-          eventDate: eventDate ? new Date(eventDate).toLocaleDateString() : null,
-          eventTime,
-          confirmationCode,
-          message: 'Thank you for your inquiry! We will review your request and get back to you within 24 hours.'
-        }
+        subject: `${formType.replace('-', ' ').toUpperCase()} Inquiry Received - Kocky's Bar & Grill`,
+        html: customerEmailHtml,
       });
 
-      logger.info(`Email notifications sent for ${formType} inquiry ${inquiry.id}`);
+      if (emailStatus.adminSent) {
+        console.log('✅ Internal inquiry notification sent to info@kockys.com');
+        logger.info(`Email notifications sent for ${formType} inquiry ${inquiry.id}`);
+      } else {
+        console.log('⚠️ Internal inquiry notification not sent (email service not configured)');
+      }
+
+      if (emailStatus.customerSent) {
+        console.log('✅ Inquiry confirmation sent to customer:', email);
+      } else {
+        console.log('⚠️ Inquiry confirmation not sent (email service not configured)');
+      }
     } catch (emailError) {
       logger.error('Email notification failed:', emailError);
       // Don't fail the request if email fails - inquiry is still saved
@@ -197,7 +243,8 @@ export const submitForm = async (req: Request, res: Response, next: NextFunction
       data: {
         inquiry,
         booking: bookingRecord
-      }
+      },
+      emailStatus,
     });
   } catch (error) {
     logger.error('Form submission error:', error);

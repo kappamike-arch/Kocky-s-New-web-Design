@@ -135,6 +135,13 @@ const uploadVideo = multer({
 // Public route for getting hero settings (used by frontend)
 router.get('/', async (req: Request, res: Response) => {
   try {
+    // Set cache control headers to prevent caching
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
     const settings = await getAllHeroSettings();
     res.json({
       success: true,
@@ -151,6 +158,13 @@ router.get('/', async (req: Request, res: Response) => {
 // Public route for getting hero settings for a specific page (used by frontend)
 router.get('/:pageId', async (req: Request, res: Response) => {
   try {
+    // Set cache control headers to prevent caching
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
     const { pageId } = req.params;
     const settings = await getHeroSettings(pageId);
     

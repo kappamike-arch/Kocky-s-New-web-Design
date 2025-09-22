@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../server';
 import { sendEmail } from '../utils/email';
+import o365EmailService from '../services/o365EmailService';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -131,51 +132,83 @@ export const submitApplication = async (req: Request, res: Response, next: NextF
       }
     });
 
-    // Try to send notification emails (non-blocking)
+    // Send emails using Office 365 service
+    let emailStatus = { adminSent: false, customerSent: false };
+    
     try {
-      // Send notification to admin/HR
-      await sendEmail({
-        to: process.env.ADMIN_EMAIL || 'admin@kockysbar.com',
-        subject: `New Job Application: ${position} - ${fullName}`,
-        template: 'welcome', // Use generic template for now
-        data: {
-          name: 'Hiring Manager',
-          content: `
-            New job application received:
-            
-            Name: ${fullName}
-            Email: ${email}
-            Phone: ${phone}
-            Position: ${position}
-            
-            ${coverLetter ? `Cover Letter:\n${coverLetter}` : ''}
-            
-            ${resumeFile ? `Resume attached: ${resumeFile.originalname}` : 'No resume attached'}
-            
-            View application in admin panel: ${process.env.ADMIN_URL || 'https://staging.kockys.com/admin'}/jobs
-          `
-        }
+      // Send internal admin notification
+      const adminEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #b22222; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">🔔 New Job Application</h1>
+          </div>
+          <div style="padding: 20px; background-color: #f5f5f5; border-radius: 0 0 8px 8px;">
+            <p style="font-size: 16px; margin-bottom: 20px;">A new job application has been submitted through the website:</p>
+            <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #b22222;">
+              <h3 style="margin-top: 0; color: #b22222;">Applicant Information</h3>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin: 10px 0; font-size: 16px;"><strong>👤 Name:</strong> ${fullName}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📧 Email:</strong> ${email}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📞 Phone:</strong> ${phone}</li>
+              </ul>
+              <h3 style="color: #b22222; margin-top: 20px;">Application Details</h3>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin: 10px 0; font-size: 16px;"><strong>💼 Position:</strong> ${position}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📄 Resume:</strong> ${resumeFile ? resumeFile.originalname : 'No resume attached'}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📝 Cover Letter:</strong> ${coverLetter || 'None provided'}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>🆔 Application ID:</strong> <span style="color: #b22222; font-weight: bold; font-size: 18px;">${application.id}</span></li>
+              </ul>
+            </div>
+            <p style="font-size: 16px; margin-bottom: 20px;"><strong>Action Required:</strong> Please review this application and contact the applicant if needed.</p>
+          </div>
+        </div>
+      `;
+
+      emailStatus.adminSent = await o365EmailService.sendEmail({
+        to: 'info@kockys.com',
+        subject: 'New Job Application - Kocky\'s Bar & Grill',
+        html: adminEmailHtml,
       });
 
-      // Send confirmation to applicant
-      await sendEmail({
+      // Send customer confirmation
+      const customerEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #b22222; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">Application Received!</h1>
+          </div>
+          <div style="padding: 20px; background-color: #f5f5f5; border-radius: 0 0 8px 8px;">
+            <p style="font-size: 16px; margin-bottom: 20px;">Hi ${fullName},</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">Thank you for your interest in joining the Kocky's Bar & Grill team! We have received your application for the ${position} position.</p>
+            <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #b22222;">
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin: 10px 0; font-size: 16px;"><strong>💼 Position:</strong> ${position}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>🆔 Application ID:</strong> <span style="color: #b22222; font-weight: bold; font-size: 18px;">${application.id}</span></li>
+              </ul>
+            </div>
+            <p style="font-size: 16px; margin-bottom: 20px;">We will review your application carefully and contact you within 1-2 weeks if your qualifications match our needs.</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">If you have any questions, please call us at <strong>(555) 123-4567</strong> or reply to this email.</p>
+            <p style="font-size: 16px;">Best regards,<br><strong>The Kocky's Team</strong></p>
+          </div>
+        </div>
+      `;
+
+      emailStatus.customerSent = await o365EmailService.sendEmail({
         to: email,
-        subject: 'Application Received - Kocky\'s Bar & Grill',
-        template: 'welcome',
-        data: {
-          name: fullName,
-          content: `
-            Thank you for your interest in the ${position.toLowerCase()} position at Kocky's Bar & Grill!
-            
-            We have received your application and will review it carefully. If your qualifications match our needs, we will contact you within 1-2 weeks to schedule an interview.
-            
-            We appreciate your interest in joining our team!
-            
-            Best regards,
-            The Kocky's Team
-          `
-        }
+        subject: 'Job Application Received - Kocky\'s Bar & Grill',
+        html: customerEmailHtml,
       });
+
+      if (emailStatus.adminSent) {
+        console.log('✅ Internal job application notification sent to info@kockys.com');
+      } else {
+        console.log('⚠️ Internal job application notification not sent (email service not configured)');
+      }
+
+      if (emailStatus.customerSent) {
+        console.log('✅ Job application confirmation sent to applicant:', email);
+      } else {
+        console.log('⚠️ Job application confirmation not sent (email service not configured)');
+      }
     } catch (emailError) {
       // Log email error but don't fail the request
       console.log('Email notification failed (non-critical):', emailError);
@@ -189,7 +222,8 @@ export const submitApplication = async (req: Request, res: Response, next: NextF
         fullName: application.fullName,
         position: application.position,
         submittedAt: application.createdAt
-      }
+      },
+      emailStatus,
     });
 
   } catch (error) {

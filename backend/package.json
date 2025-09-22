@@ -15,7 +15,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@azure/msal-node": "^3.7.3",
+    "@azure/msal-node": "^3.7.4",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@sendgrid/mail": "^8.1.0",
     "@types/bcrypt": "^6.0.0",

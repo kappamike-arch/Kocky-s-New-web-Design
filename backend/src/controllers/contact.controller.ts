@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../server';
 import { sendEmail, sendInquiryAutoReply } from '../utils/email';
+import o365EmailService from '../services/o365EmailService';
 import { v4 as uuidv4 } from 'uuid';
 
 export const createInquiry = async (req: Request, res: Response, next: NextFunction) => {
@@ -26,35 +27,81 @@ export const createInquiry = async (req: Request, res: Response, next: NextFunct
       },
     });
 
-    // Try to send emails but don't fail if email service is not configured
+    // Send emails using Office 365 service
+    let emailStatus = { adminSent: false, customerSent: false };
+    
     try {
-      // Send automatic inquiry confirmation using the new service
-      const autoReplyData = {
-        name,
-        email,
-        serviceType: serviceType || 'GENERAL',
-        eventDate: eventDate ? new Date(eventDate).toLocaleDateString() : undefined,
-        confirmationCode,
-        message
-      };
+      // Send internal admin notification
+      const adminEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #b22222; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">🔔 New Contact Inquiry</h1>
+          </div>
+          <div style="padding: 20px; background-color: #f5f5f5; border-radius: 0 0 8px 8px;">
+            <p style="font-size: 16px; margin-bottom: 20px;">A new contact inquiry has been submitted through the website:</p>
+            <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #b22222;">
+              <h3 style="margin-top: 0; color: #b22222;">Customer Information</h3>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin: 10px 0; font-size: 16px;"><strong>👤 Name:</strong> ${name}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📧 Email:</strong> ${email}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📞 Phone:</strong> ${phone || 'Not provided'}</li>
+              </ul>
+              <h3 style="color: #b22222; margin-top: 20px;">Inquiry Details</h3>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📋 Subject:</strong> ${subject || 'General Inquiry'}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>💬 Message:</strong> ${message}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>🎫 Confirmation Code:</strong> <span style="color: #b22222; font-weight: bold; font-size: 18px;">${confirmationCode}</span></li>
+              </ul>
+            </div>
+            <p style="font-size: 16px; margin-bottom: 20px;"><strong>Action Required:</strong> Please review this inquiry and contact the customer if needed.</p>
+          </div>
+        </div>
+      `;
 
-      await sendInquiryAutoReply(autoReplyData);
-
-      // Send notification to admin
-      await sendEmail({
-        to: process.env.ADMIN_EMAIL || 'admin@kockysbar.com',
-        subject: `🔔 New ${serviceType || 'General'} Inquiry - ${confirmationCode}`,
-        template: 'booking-received',
-        data: {
-          name: 'Admin Team',
-          bookingType: serviceType || 'General Inquiry',
-          date: eventDate || 'Not specified',
-          eventTime: 'Not specified',
-          guestCount: guestCount || 'Not specified',
-          confirmationCode,
-          message
-        },
+      emailStatus.adminSent = await o365EmailService.sendEmail({
+        to: 'info@kockys.com',
+        subject: 'New Contact Inquiry - Kocky\'s Bar & Grill',
+        html: adminEmailHtml,
       });
+
+      // Send customer confirmation
+      const customerEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #b22222; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">Message Received!</h1>
+          </div>
+          <div style="padding: 20px; background-color: #f5f5f5; border-radius: 0 0 8px 8px;">
+            <p style="font-size: 16px; margin-bottom: 20px;">Hi ${name},</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">Thank you for contacting Kocky's Bar & Grill! We have received your message and will respond within 24 hours.</p>
+            <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #b22222;">
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin: 10px 0; font-size: 16px;"><strong>📋 Subject:</strong> ${subject || 'General Inquiry'}</li>
+                <li style="margin: 10px 0; font-size: 16px;"><strong>🎫 Confirmation Code:</strong> <span style="color: #b22222; font-weight: bold; font-size: 18px;">${confirmationCode}</span></li>
+              </ul>
+            </div>
+            <p style="font-size: 16px; margin-bottom: 20px;">If you have any immediate questions, please call us at <strong>(555) 123-4567</strong> or reply to this email.</p>
+            <p style="font-size: 16px;">Best regards,<br><strong>The Kocky's Team</strong></p>
+          </div>
+        </div>
+      `;
+
+      emailStatus.customerSent = await o365EmailService.sendEmail({
+        to: email,
+        subject: 'Message Received - Kocky\'s Bar & Grill',
+        html: customerEmailHtml,
+      });
+
+      if (emailStatus.adminSent) {
+        console.log('✅ Internal contact notification sent to info@kockys.com');
+      } else {
+        console.log('⚠️ Internal contact notification not sent (email service not configured)');
+      }
+
+      if (emailStatus.customerSent) {
+        console.log('✅ Contact confirmation sent to customer:', email);
+      } else {
+        console.log('⚠️ Contact confirmation not sent (email service not configured)');
+      }
 
       // Log the email activity
       await prisma.emailLog.create({
@@ -107,6 +154,7 @@ export const createInquiry = async (req: Request, res: Response, next: NextFunct
       success: true,
       message: 'Your message has been sent successfully',
       inquiry,
+      emailStatus,
     });
   } catch (error) {
     next(error);

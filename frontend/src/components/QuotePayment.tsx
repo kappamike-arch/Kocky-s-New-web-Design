@@ -226,3 +226,4 @@ export function PaymentSuccessPage({ sessionId }: { sessionId: string }) {
     </div>
   );
 }
+

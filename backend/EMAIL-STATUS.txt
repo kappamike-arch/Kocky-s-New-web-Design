@@ -1,0 +1,15 @@
+
+# TEMPORARY SOLUTION: Use a working email service
+# Option 1: SendGrid (Recommended)
+# Get free API key from: https://sendgrid.com
+# SENDGRID_API_KEY=SG.your-sendgrid-api-key-here
+
+# Option 2: Gmail SMTP (Quick test)
+# Enable 2FA and get app password from: https://myaccount.google.com/apppasswords
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=your-gmail@gmail.com
+# SMTP_PASS=your-app-password
+
+# Current Office 365 issue: Requires OAuth2, not basic SMTP auth
+

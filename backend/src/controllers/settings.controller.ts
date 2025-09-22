@@ -58,23 +58,43 @@ const getOrCreateSettings = async () => {
 
 export const getPublicSettings = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Set cache control headers to prevent caching
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
     const settings = await getOrCreateSettings();
     
-    // Return only public information
+    // Helper function to decode HTML entities
+    const decodeHtmlEntities = (str: string): string => {
+      if (typeof str !== 'string') return str;
+      return str
+        .replace(/&#x27;/g, "'")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#x2F;/g, "/");
+    };
+
+    // Return only public information with decoded HTML entities
     const publicSettings = {
-      siteName: settings.siteName,
-      siteDescription: settings.siteDescription,
-      contactEmail: settings.contactEmail,
-      contactPhone: settings.contactPhone,
-      address: settings.address,
-      city: settings.city,
-      state: settings.state,
-      zipCode: settings.zipCode,
-      country: settings.country,
+      siteName: decodeHtmlEntities(settings.siteName),
+      siteDescription: decodeHtmlEntities(settings.siteDescription || ''),
+      contactEmail: decodeHtmlEntities(settings.contactEmail),
+      contactPhone: decodeHtmlEntities(settings.contactPhone),
+      address: decodeHtmlEntities(settings.address),
+      city: decodeHtmlEntities(settings.city),
+      state: decodeHtmlEntities(settings.state),
+      zipCode: decodeHtmlEntities(settings.zipCode),
+      country: decodeHtmlEntities(settings.country),
       businessHours: settings.businessHours,
       socialMedia: settings.socialMedia,
       reservationSettings: settings.reservationSettings,
-      onlineOrderingUrl: settings.onlineOrderingUrl,
+      onlineOrderingUrl: decodeHtmlEntities(settings.onlineOrderingUrl || ''),
+      updatedAt: settings.updatedAt,
     };
 
     res.json({ success: true, settings: publicSettings });
@@ -85,9 +105,44 @@ export const getPublicSettings = async (req: Request, res: Response, next: NextF
 
 export const getAllSettings = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Set cache control headers to prevent caching
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
     const settings = await getOrCreateSettings();
+    
+    // Helper function to decode HTML entities
+    const decodeHtmlEntities = (str: string): string => {
+      if (typeof str !== 'string') return str;
+      return str
+        .replace(/&#x27;/g, "'")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#x2F;/g, "/");
+    };
+
+    // Decode HTML entities in the settings object
+    const decodedSettings = {
+      ...settings,
+      siteName: decodeHtmlEntities(settings.siteName),
+      siteDescription: decodeHtmlEntities(settings.siteDescription || ''),
+      contactEmail: decodeHtmlEntities(settings.contactEmail),
+      contactPhone: decodeHtmlEntities(settings.contactPhone),
+      address: decodeHtmlEntities(settings.address),
+      city: decodeHtmlEntities(settings.city),
+      state: decodeHtmlEntities(settings.state),
+      zipCode: decodeHtmlEntities(settings.zipCode),
+      country: decodeHtmlEntities(settings.country),
+      onlineOrderingUrl: decodeHtmlEntities(settings.onlineOrderingUrl || ''),
+    };
+
     // Return settings directly for compatibility
-    res.json(settings);
+    res.json(decodedSettings);
   } catch (error) {
     next(error);
   }
@@ -95,6 +150,13 @@ export const getAllSettings = async (req: Request, res: Response, next: NextFunc
 
 export const updateSettings = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Set cache control headers to prevent caching
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
     const settings = await getOrCreateSettings();
     
     // Extract and validate the data from request body

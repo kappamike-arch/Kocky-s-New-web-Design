@@ -17,3 +17,4 @@ router.post('/create-checkout/:quoteId', authenticate, createCheckoutSession);
 router.get('/payment-status/:quoteId', authenticate, getPaymentStatus);
 
 export default router;
+

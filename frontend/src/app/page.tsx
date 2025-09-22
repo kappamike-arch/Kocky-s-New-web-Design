@@ -30,9 +30,9 @@ export default function HomePage() {
   
   // Hero settings state - use consistent initial state to avoid hydration mismatch
   const [heroData, setHeroData] = useState({
-    title: "Welcome to Kocky's",
-    subtitle: 'Bar & Grill',
-    description: 'Where Great Food Meets Unforgettable Moments',
+    title: "Welcome to Kockys Bar & Grill",
+    subtitle: 'Amazing Food & Drinks',
+    description: 'Come experience the best dining in town',
     useLogo: true,
     logoUrl: '/kockys-logo.png' // Use default logo initially
   });

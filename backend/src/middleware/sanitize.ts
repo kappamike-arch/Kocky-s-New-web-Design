@@ -4,17 +4,33 @@ import validator from 'validator';
 /**
  * Sanitize input to prevent XSS attacks
  */
-export const sanitizeInput = (input: any): any => {
+export const sanitizeInput = (input: any, key?: string): any => {
   if (typeof input === 'string') {
-    // Escape HTML entities to prevent XSS
+    // Don't escape URLs, emails, or other specific fields that should remain unescaped
+    const urlFields = ['url', 'website', 'onlineOrderingUrl', 'logoUrl', 'backgroundImage', 'backgroundVideo', 'imageUrl', 'videoUrl'];
+    const emailFields = ['email', 'contactEmail'];
+    const socialMediaFields = ['facebook', 'instagram', 'twitter', 'tiktok', 'youtube'];
+    
+    if (key && (urlFields.includes(key) || emailFields.includes(key) || socialMediaFields.includes(key))) {
+      // For URLs and emails, just validate but don't escape
+      if (urlFields.includes(key) && !validator.isURL(input) && input.trim() !== '') {
+        return input; // Return as-is if not a valid URL but not empty
+      }
+      if (emailFields.includes(key) && !validator.isEmail(input) && input.trim() !== '') {
+        return input; // Return as-is if not a valid email but not empty
+      }
+      return input; // Return unescaped for valid URLs/emails
+    }
+    
+    // For other fields, escape HTML entities to prevent XSS
     return validator.escape(input);
   } else if (Array.isArray(input)) {
     return input.map(item => sanitizeInput(item));
   } else if (input !== null && typeof input === 'object') {
     const sanitized: any = {};
-    for (const key in input) {
-      if (input.hasOwnProperty(key)) {
-        sanitized[key] = sanitizeInput(input[key]);
+    for (const objKey in input) {
+      if (input.hasOwnProperty(objKey)) {
+        sanitized[objKey] = sanitizeInput(input[objKey], objKey);
       }
     }
     return sanitized;

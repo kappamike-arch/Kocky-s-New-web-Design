@@ -202,3 +202,4 @@ export function PaymentStatusCard({ quote, onPaymentSuccess }: PaymentStatusCard
     </Card>
   );
 }
+

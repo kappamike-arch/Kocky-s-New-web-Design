@@ -194,9 +194,9 @@ export const defaultHeroSettings: Record<string, HeroSettings> = {
     pageSlug: '/',
     useLogo: false,
     logoUrl: undefined,
-    title: "Welcome to Kocky's",
-    subtitle: 'Bar & Grill',
-    description: 'Where Great Food Meets Unforgettable Moments'
+    title: "Welcome to Kockys Bar & Grill",
+    subtitle: 'Amazing Food & Drinks',
+    description: 'Come experience the best dining in town'
   },
   menu: {
     id: 'menu',

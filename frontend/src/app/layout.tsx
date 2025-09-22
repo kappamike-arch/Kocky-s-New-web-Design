@@ -11,6 +11,11 @@ import { AnalyticsWrapper } from '@/components/analytics-wrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
+// Disable caching / static rendering globally
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'default-no-store';
+
 export const metadata: Metadata = {
   title: "Kocky's Bar & Grill - Best Food, Drinks & Atmosphere",
   description: 'Experience the best bar and grill in town. Great food, amazing drinks, live entertainment, and the perfect atmosphere for any occasion.',

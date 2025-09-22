@@ -42,6 +42,7 @@ import graphEmailRoutes from './routes/graphEmail.routes';
 import healthRoutes from './routes/health.routes';
 import stripeRoutes from './routes/stripe.routes';
 import paymentRoutes from './routes/payment.routes';
+import diagRoutes from './routes/diag.routes';
 import { emailScheduler } from './services/emailScheduler';
 
 // Load environment variables
@@ -163,6 +164,7 @@ app.use('/api/email', emailRoutes);
 app.use('/api/graph-email', graphEmailRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/diag', diagRoutes);
 app.use('/api', healthRoutes);
 
 // Welcome route
