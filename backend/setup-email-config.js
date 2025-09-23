@@ -178,3 +178,4 @@ function commentOutSMTP(content) {
 
 // Run the setup
 setupEmailConfig().catch(console.error);
+

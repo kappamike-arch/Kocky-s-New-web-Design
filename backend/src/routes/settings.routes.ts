@@ -9,19 +9,14 @@ const router = Router();
 router.get('/public', settingsController.getPublicSettings);
 router.get('/business-hours', settingsController.getBusinessHours);
 
-// Protected routes - Admin only
-// TODO: Re-enable authentication after testing
+// Authentication disabled for testing
 router.get(
   '/',
-  // authenticate,
-  // authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   settingsController.getAllSettings
 );
 
 router.put(
   '/',
-  // authenticate,
-  // authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   settingsController.updateSettings
 );
 

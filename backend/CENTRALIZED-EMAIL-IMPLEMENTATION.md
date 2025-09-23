@@ -184,3 +184,4 @@ All inquiry systems (Reservations, Contact, Jobs, Catering/Events) now use the s
 The system is designed to be resilient - even if email sending fails, all inquiries are still saved to the database, ensuring no customer data is lost.
 
 **Next Action**: Get a valid client secret from Azure Portal to enable email delivery.
+

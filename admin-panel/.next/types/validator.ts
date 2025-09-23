@@ -281,6 +281,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies AppPageConfig<"/users">
 }
 
+// Validate ../../src/app/admin/api/settings/route.ts
+{
+  const handler = {} as typeof import("../../src/app/admin/api/settings/route.js")
+  handler satisfies RouteHandlerConfig<"/admin/api/settings">
+}
+
 // Validate ../../src/app/api/auth/log/route.ts
 {
   const handler = {} as typeof import("../../src/app/api/auth/log/route.js")
@@ -303,6 +309,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   const handler = {} as typeof import("../../src/app/api/email/templates/[templateId]/route.js")
   handler satisfies RouteHandlerConfig<"/api/email/templates/[templateId]">
+}
+
+// Validate ../../src/app/api/settings/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/settings/route.js")
+  handler satisfies RouteHandlerConfig<"/api/settings">
 }
 
 // Validate ../../src/app/api/upload-media/route.ts

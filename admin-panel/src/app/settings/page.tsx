@@ -21,7 +21,9 @@ export default function SettingsPage() {
   const { data: siteSettings, isLoading, error } = useQuery({
     queryKey: ['site-settings'],
     queryFn: settings.get,
-    retry: 1,
+    retry: 3,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache
   });
 
   // Update settings mutation
@@ -111,7 +113,14 @@ export default function SettingsPage() {
 
   // Update form data when settings are loaded
   useEffect(() => {
-    if (siteSettings) {
+    if (siteSettings?.settings) {
+      // Handle the API response format: { success: true, settings: {...} }
+      setFormData(prevData => ({
+        ...prevData,
+        ...siteSettings.settings
+      }));
+    } else if (siteSettings && !siteSettings.settings) {
+      // Handle direct settings object (fallback)
       setFormData(prevData => ({
         ...prevData,
         ...siteSettings

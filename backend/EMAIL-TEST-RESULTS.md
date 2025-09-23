@@ -141,3 +141,4 @@ The system has been tested with:
 **Next Action**: Get a valid client secret from Azure Portal to enable email delivery to Kappamike@gmail.com and info@kockys.com.
 
 The system is designed to be resilient - even if email sending fails, all inquiries are still saved to the database, ensuring no customer data is lost.
+

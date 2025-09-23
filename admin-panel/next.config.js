@@ -2,6 +2,7 @@
 const nextConfig = {
   basePath: '/admin',
   trailingSlash: true,            // fix redirect loop with Nginx
+  outputFileTracingRoot: '/home/stagingkockys/public_html/current/admin-panel',
   // assetPrefix is not usually needed; uncomment only if _next assets 404
   // assetPrefix: '/admin',
   // Fix WebSocket HMR for staging domain
@@ -54,8 +55,22 @@ const nextConfig = {
   },
   env: {
     // Legacy environment variables (deprecated - use centralized config)
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://staging.kockys.com/api',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5001/api',
     NEXT_PUBLIC_ADMIN_SECRET: process.env.NEXT_PUBLIC_ADMIN_SECRET || 'admin-secret-key-change-this',
+  },
+  // Add headers to fix Content Security Policy issues
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; connect-src 'self' http://127.0.0.1:5001 https://staging.kockys.com http://localhost:5001; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;",
+          },
+        ],
+      },
+    ];
   },
   typescript: {
     // Temporarily ignore TypeScript errors during build

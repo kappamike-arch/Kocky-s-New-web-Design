@@ -21,7 +21,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
-import { api } from '@/lib/api/client';
+// Remove old API client import - we'll use direct fetch
+
+// API Configuration
+const API_BASE_URL = 'https://staging.kockys.com/api';
 
 interface ContentSection {
   id: string;
@@ -122,22 +125,51 @@ export default function ContentManagementPage() {
   }, []);
 
   const fetchContent = async () => {
+    console.log('🔍 fetchContent: Starting to fetch content from backend...');
     try {
       // Fetch hero content from hero-settings endpoint
       let heroData = null;
       try {
-        const heroResponse = await api.get('/hero-settings/home');
-        heroData = heroResponse.data;
+        console.log('🔍 fetchContent: Fetching hero settings from ' + API_BASE_URL + '/hero-settings/home');
+        const heroResponse = await fetch(API_BASE_URL + '/hero-settings/home', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          },
+          cache: 'no-store'
+        });
+        
+        console.log('🔍 fetchContent: Hero response status:', heroResponse.status);
+        if (heroResponse.ok) {
+          const heroResult = await heroResponse.json();
+          console.log('🔍 fetchContent: Hero data received:', heroResult);
+          heroData = heroResult.settings || heroResult;
+        }
       } catch (error) {
-        console.log('Hero settings not found, using defaults');
+        console.log('🔍 fetchContent: Hero settings not found, using defaults:', error);
       }
       
       // Fetch other settings
-      const response = await api.get('/settings');
-      const data = response.data;
+      console.log('🔍 fetchContent: Fetching settings from ' + API_BASE_URL + '/settings');
+      const response = await fetch(API_BASE_URL + '/settings', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        },
+        cache: 'no-store'
+      });
+      
+      console.log('🔍 fetchContent: Settings response status:', response.status);
+      if (!response.ok) {
+        console.error('🔍 fetchContent: Backend API error:', response.status, response.statusText);
+        throw new Error(`Backend API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('🔍 fetchContent: Settings data received:', data);
       
       if (data) {
-        // Map settings to content sections
+        // Map settings to content sections with correct field mapping
         const mappedContent: Record<string, ContentSection> = {};
         contentSections.forEach(section => {
           if (section.id === 'hero_home' && heroData) {
@@ -153,10 +185,40 @@ export default function ContentManagementPage() {
               }
             };
           } else {
-            // Use regular settings for other sections
+            // Map settings fields correctly
+            let fieldValue = section.value; // Default fallback
+            
+            switch (section.id) {
+              case 'about_text':
+                fieldValue = data.siteDescription || section.value;
+                break;
+              case 'location_address':
+                fieldValue = `${data.address || ''}\n${data.city || ''}, ${data.state || ''} ${data.zipCode || ''}`.trim();
+                break;
+              case 'contact_phone':
+                fieldValue = data.contactPhone || section.value;
+                break;
+              case 'contact_email':
+                fieldValue = data.contactEmail || section.value;
+                break;
+              case 'online_ordering_url':
+                fieldValue = data.onlineOrderingUrl || section.value;
+                break;
+              case 'facebook_url':
+                fieldValue = data.socialMedia?.facebook || section.value;
+                break;
+              case 'instagram_url':
+                fieldValue = data.socialMedia?.instagram || section.value;
+                break;
+              case 'happy_hour_times':
+                // This would need to be added to the settings model
+                fieldValue = section.value; // Keep default for now
+                break;
+            }
+            
             mappedContent[section.id] = {
               ...section,
-              value: data[section.id] || section.value
+              value: fieldValue
             };
           }
         });
@@ -164,26 +226,23 @@ export default function ContentManagementPage() {
         setContent(mappedContent);
         setOnlineOrderingUrl(data.onlineOrderingUrl || '');
         
-        // Set email settings
+        // Set email settings from the actual data structure
         setEmailSettings({
-          smtpHost: data.smtpHost || '',
-          smtpPort: data.smtpPort || '',
-          smtpUser: data.smtpUser || '',
-          fromName: data.emailFromName || 'Kocky\'s Bar & Grill',
-          emailLogo: data.emailLogo || '',
-          emailFooter: data.emailFooter || '© 2024 Kocky\'s Bar & Grill'
+          smtpHost: data.emailSettings?.smtpHost || '',
+          smtpPort: data.emailSettings?.smtpPort || '',
+          smtpUser: data.emailSettings?.from || '',
+          fromName: data.emailSettings?.fromName || 'Kocky\'s Bar & Grill',
+          emailLogo: data.emailSettings?.logo || '',
+          emailFooter: data.emailSettings?.footer || '© 2024 Kocky\'s Bar & Grill'
         });
       }
     } catch (error) {
-      console.error('Error fetching content:', error);
-      toast.error('Failed to load content');
+      console.error('🔍 fetchContent: Error fetching content:', error);
+      toast.error('Failed to load content from backend. Please check your connection.');
       
-      // Use default content
-      const defaultContent: Record<string, ContentSection> = {};
-      contentSections.forEach(section => {
-        defaultContent[section.id] = section;
-      });
-      setContent(defaultContent);
+      // Don't fall back to mock data - show error state instead
+      console.log('🔍 fetchContent: API fetch failed, showing error state');
+      setContent({});
     } finally {
       setLoading(false);
     }
@@ -195,44 +254,70 @@ export default function ContentManagementPage() {
     try {
       // For hero content, save to hero-settings endpoint
       if (sectionId === 'hero_home') {
-        const response = await api.put('/hero-settings/home', {
-          title: newValue.title,
-          subtitle: newValue.subtitle,
-          description: newValue.description,
-          useLogo: false,
-          backgroundImage: newValue.image,
-          backgroundVideo: newValue.video
+        const response = await fetch(API_BASE_URL + '/hero-settings/home', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            title: newValue.title,
+            subtitle: newValue.subtitle,
+            description: newValue.description,
+            useLogo: false,
+            backgroundImage: newValue.image,
+            backgroundVideo: newValue.video
+          }),
+          cache: 'no-store'
         });
         
         if (response.status === 200) {
           toast.success('Hero content updated successfully');
-          setContent(prev => ({
-            ...prev,
-            [sectionId]: {
-              ...prev[sectionId],
-              value: newValue
-            }
-          }));
+          // Re-fetch content to get live data from backend
+          await fetchContent();
         } else {
           throw new Error('Failed to save hero content');
         }
         return;
       }
       
-      // For other content, use the settings endpoint
-      const response = await api.put('/settings', {
-        [sectionId]: newValue
+      // For other content, map to correct settings fields
+      let updateData: any = {};
+      
+      switch (sectionId) {
+        case 'about_text':
+          updateData.siteDescription = newValue;
+          break;
+        case 'contact_phone':
+          updateData.contactPhone = newValue;
+          break;
+        case 'contact_email':
+          updateData.contactEmail = newValue;
+          break;
+        case 'facebook_url':
+          updateData.socialMedia = { facebook: newValue };
+          break;
+        case 'instagram_url':
+          updateData.socialMedia = { instagram: newValue };
+          break;
+        default:
+          updateData[sectionId] = newValue;
+      }
+      
+      const response = await fetch(API_BASE_URL + '/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+        cache: 'no-store'
       });
 
       if (response.status === 200) {
         toast.success('Content updated successfully');
-        setContent(prev => ({
-          ...prev,
-          [sectionId]: {
-            ...prev[sectionId],
-            value: newValue
-          }
-        }));
+        // Re-fetch content to get live data from backend
+        await fetchContent();
       } else {
         throw new Error('Failed to save');
       }
@@ -248,12 +333,22 @@ export default function ContentManagementPage() {
     setSaving('online_ordering');
     
     try {
-      const response = await api.put('/settings', {
-        onlineOrderingUrl: onlineOrderingUrl
+      const response = await fetch(API_BASE_URL + '/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          onlineOrderingUrl: onlineOrderingUrl
+        }),
+        cache: 'no-store'
       });
 
       if (response.status === 200) {
         toast.success('Online ordering URL updated');
+        // Re-fetch content to get live data from backend
+        await fetchContent();
       } else {
         throw new Error('Failed to save');
       }
@@ -269,10 +364,29 @@ export default function ContentManagementPage() {
     setSaving('email_settings');
     
     try {
-      const response = await api.put('/settings', emailSettings);
+      const response = await fetch(API_BASE_URL + '/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          emailSettings: {
+            smtpHost: emailSettings.smtpHost,
+            smtpPort: emailSettings.smtpPort,
+            from: emailSettings.smtpUser,
+            fromName: emailSettings.fromName,
+            logo: emailSettings.emailLogo,
+            footer: emailSettings.emailFooter
+          }
+        }),
+        cache: 'no-store'
+      });
 
       if (response.status === 200) {
         toast.success('Email settings updated');
+        // Re-fetch content to get live data from backend
+        await fetchContent();
       } else {
         throw new Error('Failed to save');
       }
@@ -286,10 +400,16 @@ export default function ContentManagementPage() {
 
   const testEmailConfiguration = async () => {
     try {
-      const response = await api.post('/test-email', {
-        to: emailSettings.smtpUser,
-        subject: 'Test Email Configuration',
-        includePaymentLink: true
+      const response = await fetch(API_BASE_URL + '/settings/test-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          email: emailSettings.smtpUser,
+          account: 'default'
+        })
       });
 
       if (response.status === 200) {

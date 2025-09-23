@@ -33,7 +33,18 @@
       "regex": "^(?:/((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/\\.]+))$"
     }
   ],
-  "headers": [],
+  "headers": [
+    {
+      "source": "/admin/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; connect-src 'self' http://127.0.0.1:5001 https://staging.kockys.com http://localhost:5001; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;"
+        }
+      ],
+      "regex": "^/admin(?:/(.*))(?:/)?$"
+    }
+  ],
   "rewrites": {
     "beforeFiles": [],
     "afterFiles": [],
@@ -117,6 +128,12 @@
       "regex": "^/_not\\-found(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/admin/api/settings",
+      "regex": "^/admin/api/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/api/settings(?:/)?$"
     },
     {
       "page": "/analytics",

@@ -110,3 +110,4 @@ async function testEmailService() {
 
 // Run the test
 testEmailService().catch(console.error);
+

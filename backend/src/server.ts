@@ -87,7 +87,7 @@ const corsOptions = {
   origin: ['https://staging.kockys.com'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'Accept']
 };
 app.use(cors(corsOptions));
 

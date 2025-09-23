@@ -123,7 +123,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "/home/stagingkockys/Kocky's New Web Design with Back end/Kocky-s-New-web-Design/Kocky-s-New-web-Design",
+    "outputFileTracingRoot": "/home/stagingkockys/public_html/current/admin-panel",
     "allowedDevOrigins": [
       "staging.kockys.com"
     ],
@@ -317,11 +317,11 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.js",
     "turbopack": {
-      "root": "/home/stagingkockys/Kocky's New Web Design with Back end/Kocky-s-New-web-Design/Kocky-s-New-web-Design"
+      "root": "/home/stagingkockys/public_html/current/admin-panel"
     }
   },
   "appDir": "/home/stagingkockys/Kocky's New Web Design with Back end/Kocky-s-New-web-Design/Kocky-s-New-web-Design/admin-panel",
-  "relativeAppDir": "admin-panel",
+  "relativeAppDir": "../../../Kocky's New Web Design with Back end/Kocky-s-New-web-Design/Kocky-s-New-web-Design/admin-panel",
   "files": [
     ".next/routes-manifest.json",
     ".next/server/pages-manifest.json",

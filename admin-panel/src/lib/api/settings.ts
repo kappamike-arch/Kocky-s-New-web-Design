@@ -89,8 +89,25 @@ export const settings = {
   // Get settings
   get: async () => {
     try {
-      const response = await api.get('/settings');
-      return response.data;
+      // Use direct backend URL instead of API proxy
+      const response = await fetch('http://127.0.0.1:5001/api/settings', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        cache: 'no-store'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Backend API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      // Backend returns settings directly, not wrapped in success object
+      return { success: true, settings: data };
     } catch (error) {
       console.error('Failed to fetch settings:', error);
       throw error;
@@ -100,8 +117,26 @@ export const settings = {
   // Update settings
   update: async (data: UpdateSettingsData) => {
     try {
-      const response = await api.put('/settings', data);
-      return response.data;
+      // Use direct backend URL instead of API proxy
+      const response = await fetch('http://127.0.0.1:5001/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        body: JSON.stringify(data),
+        cache: 'no-store'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Backend API error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      return result;
     } catch (error) {
       console.error('Failed to update settings:', error);
       throw error;

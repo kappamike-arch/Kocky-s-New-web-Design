@@ -28,7 +28,7 @@ export function compileMJML(mjmlContent: string, options: MJMLOptions = {}): Com
     return {
       html: result.html,
       errors: result.errors.map((error: any) => error.message),
-      warnings: result.warnings.map((warning: any) => warning.message)
+      warnings: (result as any).warnings?.map((warning: any) => warning.message) || []
     };
   } catch (error: any) {
     return {

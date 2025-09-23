@@ -12,7 +12,7 @@ import {
   Mail,
   Clock
 } from 'lucide-react';
-// import { useBusinessInfo } from '@/contexts/SettingsContext';
+// import { useBusinessInfo } from '@/contexts/SettingsContext'; // No longer needed - using server props
 
 const footerLinks = {
   menu: [
@@ -38,18 +38,22 @@ const footerLinks = {
   ],
 };
 
-export function Footer() {
-  // Use static data instead of context to avoid build issues
-  const siteName = "Kocky's Bar & Grill";
-  const email = "info@kockys.com";
-  const phone = "(555) 123-4567";
-  const fullAddress = "123 Main Street, City, State 12345";
-  const socialMedia = {
+interface FooterProps {
+  settings?: any;
+}
+
+export function Footer({ settings }: FooterProps) {
+  // Use server-fetched data
+  const siteName = settings?.siteName || "Kocky's Bar & Grill";
+  const email = settings?.contactEmail || "info@kockys.com";
+  const phone = settings?.contactPhone || "(555) 123-4567";
+  const fullAddress = settings?.address || "123 Main Street, City, State 12345";
+  const socialMedia = settings?.socialMedia || {
     facebook: "https://facebook.com/kockys",
     instagram: "https://instagram.com/kockys",
     twitter: "https://twitter.com/kockys",
   };
-  const businessHours = {
+  const businessHours = settings?.businessHours || {
     monday: 'Mon: 11:00 AM - 10:00 PM',
     tuesday: 'Tue: 11:00 AM - 10:00 PM',
     wednesday: 'Wed: 11:00 AM - 10:00 PM',

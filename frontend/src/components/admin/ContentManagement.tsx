@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Save, Upload, Image, Video, Type, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+// API Configuration
+const API_BASE_URL = 'https://staging.kockys.com/api';
 
 interface ContentManagementProps {
   onSave?: (data: any) => void;
@@ -18,19 +21,127 @@ export default function ContentManagement({ onSave }: ContentManagementProps) {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  useEffect(() => {
+    fetchContent();
+  }, []);
+
+  const fetchContent = async () => {
+    try {
+      console.log('🔍 ContentManagement: Fetching content from backend...');
+      
+      // Fetch hero content from hero-settings endpoint
+      let heroData = null;
+      try {
+        const heroResponse = await fetch('API_BASE_URL/hero-settings/home', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          cache: 'no-store'
+        });
+        
+        if (heroResponse.ok) {
+          const heroResult = await heroResponse.json();
+          console.log('🔍 ContentManagement: Hero data received:', heroResult);
+          heroData = heroResult.settings || heroResult;
+        }
+      } catch (error) {
+        console.log('🔍 ContentManagement: Hero settings not found, using defaults:', error);
+      }
+      
+      // Fetch other settings
+      const response = await fetch('API_BASE_URL/settings', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        cache: 'no-store'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('🔍 ContentManagement: Settings data received:', data);
+        
+        // Update form data with live data from backend
+        setFormData({
+          heroTitle: heroData?.title || "Welcome to Kocky's",
+          heroSubtitle: heroData?.subtitle || "Bar & Grill",
+          heroDescription: heroData?.description || "Where Great Food Meets Unforgettable Moments",
+          aboutText: data.siteDescription || "This text appears on the About section of the homepage"
+        });
+      } else {
+        console.error('🔍 ContentManagement: Failed to fetch settings:', response.status);
+        toast.error('Failed to load content from backend');
+      }
+    } catch (error) {
+      console.error('🔍 ContentManagement: Error fetching content:', error);
+      toast.error('Failed to load content from backend. Please check your connection.');
+    } finally {
+      setIsInitialLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Save hero content to hero-settings endpoint
+      const heroResponse = await fetch('API_BASE_URL/hero-settings/home', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        body: JSON.stringify({
+          title: formData.heroTitle,
+          subtitle: formData.heroSubtitle,
+          description: formData.heroDescription,
+          useLogo: false
+        }),
+        cache: 'no-store'
+      });
+      
+      if (!heroResponse.ok) {
+        throw new Error('Failed to save hero content');
+      }
+      
+      // Save about text to settings endpoint
+      const settingsResponse = await fetch('API_BASE_URL/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        body: JSON.stringify({
+          siteDescription: formData.aboutText
+        }),
+        cache: 'no-store'
+      });
+      
+      if (!settingsResponse.ok) {
+        throw new Error('Failed to save about text');
+      }
       
       if (onSave) {
         onSave(formData);
       }
       
       toast.success('Content saved successfully!');
+      
+      // Re-fetch content to ensure UI shows live data
+      await fetchContent();
     } catch (error) {
+      console.error('Error saving content:', error);
       toast.error('Failed to save content');
     } finally {
       setIsLoading(false);
@@ -43,6 +154,20 @@ export default function ContentManagement({ onSave }: ContentManagementProps) {
       [field]: value
     }));
   };
+
+  if (isInitialLoading) {
+    return (
+      <div className="admin-panel">
+        <div className="admin-header">
+          <h1 className="admin-h1">Content Management</h1>
+          <p className="admin-help">Loading content from backend...</p>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-panel">

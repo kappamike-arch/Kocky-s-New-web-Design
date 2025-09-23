@@ -222,9 +222,19 @@ export const updateSettings = async (req: Request, res: Response, next: NextFunc
         : businessHours;
     }
     
+    console.log('Updating settings with data:', updateData);
+    console.log('Settings ID:', settings.id);
+    
     const updatedSettings = await prisma.settings.update({
       where: { id: settings.id },
       data: updateData,
+    });
+
+    console.log('Settings updated successfully:', {
+      id: updatedSettings.id,
+      contactPhone: updatedSettings.contactPhone,
+      address: updatedSettings.address,
+      updatedAt: updatedSettings.updatedAt
     });
 
     res.json({

@@ -45,19 +45,42 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     
     try {
       setIsLoading(true);
-      // Try to fetch from API, but don't fail if it doesn't work
-      const response = await fetch('/api/settings/public');
+      console.log('[SettingsContext] Fetching settings from API...');
+      
+      // Try to fetch from API with cache-busting headers
+      const response = await fetch('https://staging.kockys.com/api/settings', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        cache: 'no-store', // Prevent Next.js from caching
+      });
+      
+      console.log('[SettingsContext] API response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        if (data && data.success) {
+        console.log('[SettingsContext] API response data:', data);
+        
+        if (data && data.success && data.settings) {
           const mergedSettings = {
             ...defaultSettings,
-            ...data.data,
-            socialMedia: { ...defaultSettings.socialMedia, ...(data.data.socialMedia || {}) },
-            businessHours: { ...defaultSettings.businessHours, ...(data.data.businessHours || {}) },
+            restaurantName: data.settings.siteName || defaultSettings.restaurantName,
+            tagline: data.settings.siteDescription || defaultSettings.tagline,
+            address: data.settings.address || defaultSettings.address,
+            phone: data.settings.contactPhone || defaultSettings.phone,
+            email: data.settings.contactEmail || defaultSettings.email,
+            website: data.settings.onlineOrderingUrl || defaultSettings.website,
+            socialMedia: { ...defaultSettings.socialMedia, ...(data.settings.socialMedia || {}) },
+            businessHours: { ...defaultSettings.businessHours, ...(data.settings.businessHours || {}) },
           };
+          console.log('[SettingsContext] Merged settings:', mergedSettings);
           setSettings(mergedSettings);
+        } else {
+          console.warn('[SettingsContext] Invalid API response format:', data);
         }
+      } else {
+        console.warn('[SettingsContext] API request failed with status:', response.status);
       }
     } catch (error) {
       console.warn('[SettingsContext] Failed to fetch settings, using defaults:', error);
@@ -96,6 +119,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     refresh: fetchSettings,
     getSetting,
   };
+
+  // Expose refresh function globally for admin panel to trigger
+  if (typeof window !== 'undefined') {
+    (window as any).refreshSettings = fetchSettings;
+  }
 
   return (
     <SettingsContext.Provider value={value}>

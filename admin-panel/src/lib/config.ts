@@ -7,9 +7,8 @@
 export const PUBLIC_BASE_URL =
   process.env.NEXT_PUBLIC_PUBLIC_BASE_URL || 'https://staging.kockys.com';
 
-// API Base URL - can be different from public URL for microservices
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || `${PUBLIC_BASE_URL}`;
+// API Base URL - use staging domain for admin panel
+export const API_BASE_URL = 'https://staging.kockys.com';
 
 // API prefix
 export const API_PREFIX = '/api';

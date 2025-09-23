@@ -2,7 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 // API URLs - Use relative paths for production
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin') ? '/admin/api' : '/api');
 const CMS_BASE_URL = process.env.NEXT_PUBLIC_CMS_URL || null; // GraphQL not available
 
 // Create axios instance for backend API

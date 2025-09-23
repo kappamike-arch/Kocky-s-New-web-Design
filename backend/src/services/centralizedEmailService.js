@@ -476,3 +476,4 @@ class CentralizedEmailService {
 // Export singleton instance
 const centralizedEmailService = new CentralizedEmailService();
 module.exports = centralizedEmailService;
+

@@ -8,6 +8,7 @@ import { Footer } from '@/components/layout/Footer';
 // import { FloatingNewsletter } from '@/components/newsletter/FloatingNewsletter';
 import { AnalyticsWrapper } from '@/components/analytics-wrapper';
 // import { FloatingEmailSignup } from '@/components/floating-email-signup';
+import { getServerSettings } from '@/lib/server-data';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -60,11 +61,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Fetch settings on the server with error handling
+  let settings = null;
+  try {
+    settings = await getServerSettings();
+  } catch (error) {
+    console.error('Server-side settings fetch failed:', error);
+    // Continue with null - Footer will use fallbacks
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased`}>
@@ -73,7 +83,7 @@ export default function RootLayout({
           <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-grow">{children}</main>
-            <Footer />
+            <Footer settings={settings} />
           </div>
           {/* <FloatingEmailSignup /> */}
           {/* <FloatingNewsletter /> */}

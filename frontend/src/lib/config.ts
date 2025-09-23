@@ -11,11 +11,18 @@ export const PUBLIC_BASE_URL =
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || `${PUBLIC_BASE_URL}`;
 
+// Internal API URL for server-side fetching (avoids proxy loops)
+export const INTERNAL_API_BASE_URL =
+  process.env.INTERNAL_API_BASE_URL || 'https://staging.kockys.com';
+
 // API prefix
 export const API_PREFIX = '/api';
 
-// Full API URL
+// Full API URL (for client-side)
 export const API_URL = `${API_BASE_URL}${API_PREFIX}`;
+
+// Internal API URL (for server-side)
+export const INTERNAL_API_URL = `${INTERNAL_API_BASE_URL}${API_PREFIX}`;
 
 // Media/Uploads base URL - use Apache proxy for file serving
 export const MEDIA_BASE_URL =

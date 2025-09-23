@@ -148,3 +148,4 @@ From Email: info@kockysbar.com
 ---
 
 **💡 Recommendation: Get a new client secret from Azure Portal, or use SendGrid for immediate email functionality.**
+

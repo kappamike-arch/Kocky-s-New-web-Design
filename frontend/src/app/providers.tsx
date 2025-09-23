@@ -29,9 +29,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
-          {/* <SettingsProvider> */}
+          <SettingsProvider>
             {children}
-          {/* </SettingsProvider> */}
+          </SettingsProvider>
         </ThemeProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
