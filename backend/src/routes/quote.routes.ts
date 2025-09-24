@@ -19,7 +19,9 @@ router.delete('/:id', quoteController.deleteQuote); // Delete quote
 router.put('/:id/status', quoteController.updateQuoteStatus); // Update quote status (Draft, Sent, Accepted, Paid, etc.)
 
 // Quote actions
-router.post('/:id/send', quoteController.sendQuote); // Send quote to customer
+router.post('/:id/send', quoteController.sendQuote); // Send quote to customer (NEW SYSTEM)
+router.post('/:id/send-email', quoteController.sendQuote); // Send quote to customer (admin panel compatibility)
+router.post('/:id/send-legacy', quoteController.sendQuoteLegacy_DISABLED); // Send quote to customer (LEGACY - DISABLED)
 router.post('/:id/clone', quoteController.cloneQuote); // Clone quote (create revision)
 
 // PDF management

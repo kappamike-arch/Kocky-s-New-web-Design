@@ -3,8 +3,7 @@
 /**
  * Email Configuration Setup Script
  * 
- * This script helps configure email services for Kocky's Bar & Grill
- * reservation system. It provides options for SendGrid, Gmail SMTP, and other providers.
+ * This script helps set up email configuration for the quote system
  */
 
 const fs = require('fs');
@@ -16,166 +15,114 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-const question = (query) => new Promise((resolve) => rl.question(query, resolve));
+function question(prompt) {
+  return new Promise((resolve) => {
+    rl.question(prompt, resolve);
+  });
+}
 
 async function setupEmailConfig() {
-  console.log('🔧 Kocky\'s Bar & Grill - Email Configuration Setup\n');
+  console.log("📧 EMAIL CONFIGURATION SETUP");
+  console.log("============================\n");
   
+  console.log("This script will help you set up email configuration for the quote system.");
+  console.log("You need at least ONE of the following email services configured:\n");
+  
+  console.log("1. SendGrid (Recommended for production)");
+  console.log("2. SMTP (Gmail, Outlook, etc.)");
+  console.log("3. Office 365 / Microsoft Graph\n");
+  
+  const envContent = [];
+  
+  // Basic configuration
+  envContent.push("# Database");
+  envContent.push('DATABASE_URL="file:./dev.db"');
+  envContent.push("");
+  envContent.push("# Server");
+  envContent.push("PORT=5001");
+  envContent.push("NODE_ENV=production");
+  envContent.push("");
+  envContent.push("# JWT");
+  envContent.push("JWT_SECRET=your-super-secret-jwt-key-change-this");
+  envContent.push("JWT_EXPIRE=7d");
+  envContent.push("");
+  
+  // Email configuration
+  envContent.push("# Email Configuration");
+  envContent.push("EMAIL_FROM_ADDRESS=quotes@kockys.com");
+  envContent.push("EMAIL_FROM_NAME=Kocky's Bar & Grill");
+  envContent.push("");
+  
+  // Ask for email service preference
+  const emailService = await question("Which email service would you like to configure? (1=SendGrid, 2=SMTP, 3=Office365): ");
+  
+  if (emailService === "1" || emailService.toLowerCase().includes("sendgrid")) {
+    console.log("\n📧 Setting up SendGrid...");
+    const sendgridKey = await question("Enter your SendGrid API Key (starts with 'SG.'): ");
+    const sendgridEmail = await question("Enter your SendGrid verified sender email: ");
+    const sendgridName = await question("Enter sender name (default: Kocky's Bar & Grill): ");
+    
+    envContent.push("# SendGrid Configuration");
+    envContent.push(`SENDGRID_API_KEY=${sendgridKey}`);
+    envContent.push(`SENDGRID_FROM_EMAIL=${sendgridEmail}`);
+    envContent.push(`SENDGRID_FROM_NAME=${sendgridName || "Kocky's Bar & Grill"}`);
+    envContent.push("");
+    
+  } else if (emailService === "2" || emailService.toLowerCase().includes("smtp")) {
+    console.log("\n📧 Setting up SMTP...");
+    const smtpHost = await question("Enter SMTP host (e.g., smtp.gmail.com): ");
+    const smtpPort = await question("Enter SMTP port (default: 587): ");
+    const smtpUser = await question("Enter SMTP username/email: ");
+    const smtpPass = await question("Enter SMTP password/app password: ");
+    
+    envContent.push("# SMTP Configuration");
+    envContent.push(`SMTP_HOST=${smtpHost}`);
+    envContent.push(`SMTP_PORT=${smtpPort || "587"}`);
+    envContent.push(`SMTP_USER=${smtpUser}`);
+    envContent.push(`SMTP_PASS=${smtpPass}`);
+    envContent.push("SMTP_SECURE=false");
+    envContent.push("");
+    
+  } else if (emailService === "3" || emailService.toLowerCase().includes("office")) {
+    console.log("\n📧 Setting up Office 365...");
+    const clientId = await question("Enter Microsoft Client ID: ");
+    const clientSecret = await question("Enter Microsoft Client Secret: ");
+    const tenantId = await question("Enter Microsoft Tenant ID: ");
+    
+    envContent.push("# Office 365 / Microsoft Graph Configuration");
+    envContent.push(`MICROSOFT_CLIENT_ID=${clientId}`);
+    envContent.push(`MICROSOFT_CLIENT_SECRET=${clientSecret}`);
+    envContent.push(`MICROSOFT_TENANT_ID=${tenantId}`);
+    envContent.push("MICROSOFT_GRAPH_SCOPE=https://graph.microsoft.com/.default");
+    envContent.push("");
+  }
+  
+  // Stripe configuration
+  console.log("\n💳 Setting up Stripe...");
+  const stripeKey = await question("Enter your Stripe Secret Key (starts with 'sk_'): ");
+  
+  envContent.push("# Stripe Configuration");
+  envContent.push(`STRIPE_SECRET_KEY=${stripeKey}`);
+  envContent.push("STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here");
+  envContent.push("");
+  
+  // App URLs
+  envContent.push("# App URLs");
+  envContent.push("APP_BASE_URL=https://staging.kockys.com");
+  envContent.push("FRONTEND_URL=https://staging.kockys.com");
+  envContent.push("");
+  
+  // Write .env file
   const envPath = path.join(__dirname, '.env');
-  let envContent = '';
+  fs.writeFileSync(envPath, envContent.join('\n'));
   
-  // Read existing .env file if it exists
-  if (fs.existsSync(envPath)) {
-    envContent = fs.readFileSync(envPath, 'utf8');
-  }
-
-  console.log('Choose your email service provider:');
-  console.log('1. SendGrid (Recommended for production)');
-  console.log('2. Gmail SMTP (Good for testing)');
-  console.log('3. Office 365 SMTP');
-  console.log('4. Custom SMTP');
-  console.log('5. Skip email configuration (emails will be logged only)\n');
-
-  const choice = await question('Enter your choice (1-5): ');
-
-  switch (choice) {
-    case '1':
-      await setupSendGrid(envContent, envPath);
-      break;
-    case '2':
-      await setupGmailSMTP(envContent, envPath);
-      break;
-    case '3':
-      await setupOffice365SMTP(envContent, envPath);
-      break;
-    case '4':
-      await setupCustomSMTP(envContent, envPath);
-      break;
-    case '5':
-      console.log('✅ Skipping email configuration. Emails will be logged to console/logs only.');
-      break;
-    default:
-      console.log('❌ Invalid choice. Please run the script again.');
-  }
-
+  console.log("\n✅ Email configuration saved to .env file");
+  console.log("\n🚀 Next steps:");
+  console.log("1. Restart the server: npm run build && node -r dotenv/config dist/server.js -p 5001");
+  console.log("2. Test the email system: node quick-email-check.js");
+  console.log("3. Send a test quote email");
+  
   rl.close();
 }
 
-async function setupSendGrid(envContent, envPath) {
-  console.log('\n📧 Setting up SendGrid...\n');
-  
-  const apiKey = await question('Enter your SendGrid API Key (starts with SG.): ');
-  const fromEmail = await question('Enter your from email (e.g., noreply@kockysbar.com): ');
-  const fromName = await question('Enter your from name (e.g., Kocky\'s Bar & Grill): ');
-
-  // Update or add SendGrid configuration
-  envContent = updateEnvVar(envContent, 'SENDGRID_API_KEY', apiKey);
-  envContent = updateEnvVar(envContent, 'SENDGRID_FROM_EMAIL', fromEmail);
-  envContent = updateEnvVar(envContent, 'SENDGRID_FROM_NAME', fromName);
-
-  // Comment out SMTP settings
-  envContent = commentOutSMTP(envContent);
-
-  fs.writeFileSync(envPath, envContent);
-  console.log('\n✅ SendGrid configuration saved!');
-  console.log('📝 Make sure to restart your backend server for changes to take effect.');
-}
-
-async function setupGmailSMTP(envContent, envPath) {
-  console.log('\n📧 Setting up Gmail SMTP...\n');
-  console.log('⚠️  Note: You need to enable 2FA and create an App Password for Gmail.');
-  console.log('   Go to: https://myaccount.google.com/apppasswords\n');
-
-  const email = await question('Enter your Gmail address: ');
-  const appPassword = await question('Enter your Gmail App Password (16 characters): ');
-
-  // Update SMTP configuration
-  envContent = updateEnvVar(envContent, 'SMTP_HOST', 'smtp.gmail.com');
-  envContent = updateEnvVar(envContent, 'SMTP_PORT', '587');
-  envContent = updateEnvVar(envContent, 'SMTP_USER', email);
-  envContent = updateEnvVar(envContent, 'SMTP_PASS', appPassword);
-  envContent = updateEnvVar(envContent, 'SMTP_SECURE', 'false');
-
-  // Comment out SendGrid
-  envContent = commentOutSendGrid(envContent);
-
-  fs.writeFileSync(envPath, envContent);
-  console.log('\n✅ Gmail SMTP configuration saved!');
-  console.log('📝 Make sure to restart your backend server for changes to take effect.');
-}
-
-async function setupOffice365SMTP(envContent, envPath) {
-  console.log('\n📧 Setting up Office 365 SMTP...\n');
-
-  const email = await question('Enter your Office 365 email address: ');
-  const password = await question('Enter your Office 365 password: ');
-
-  // Update SMTP configuration
-  envContent = updateEnvVar(envContent, 'SMTP_HOST', 'smtp.office365.com');
-  envContent = updateEnvVar(envContent, 'SMTP_PORT', '587');
-  envContent = updateEnvVar(envContent, 'SMTP_USER', email);
-  envContent = updateEnvVar(envContent, 'SMTP_PASS', password);
-  envContent = updateEnvVar(envContent, 'SMTP_SECURE', 'false');
-
-  // Comment out SendGrid
-  envContent = commentOutSendGrid(envContent);
-
-  fs.writeFileSync(envPath, envContent);
-  console.log('\n✅ Office 365 SMTP configuration saved!');
-  console.log('📝 Make sure to restart your backend server for changes to take effect.');
-}
-
-async function setupCustomSMTP(envContent, envPath) {
-  console.log('\n📧 Setting up Custom SMTP...\n');
-
-  const host = await question('Enter SMTP host (e.g., smtp.yourdomain.com): ');
-  const port = await question('Enter SMTP port (usually 587 or 465): ');
-  const user = await question('Enter SMTP username: ');
-  const pass = await question('Enter SMTP password: ');
-  const secure = await question('Use SSL/TLS? (y/n): ');
-
-  // Update SMTP configuration
-  envContent = updateEnvVar(envContent, 'SMTP_HOST', host);
-  envContent = updateEnvVar(envContent, 'SMTP_PORT', port);
-  envContent = updateEnvVar(envContent, 'SMTP_USER', user);
-  envContent = updateEnvVar(envContent, 'SMTP_PASS', pass);
-  envContent = updateEnvVar(envContent, 'SMTP_SECURE', secure.toLowerCase() === 'y' ? 'true' : 'false');
-
-  // Comment out SendGrid
-  envContent = commentOutSendGrid(envContent);
-
-  fs.writeFileSync(envPath, envContent);
-  console.log('\n✅ Custom SMTP configuration saved!');
-  console.log('📝 Make sure to restart your backend server for changes to take effect.');
-}
-
-function updateEnvVar(content, key, value) {
-  const regex = new RegExp(`^${key}=.*$`, 'm');
-  const newLine = `${key}="${value}"`;
-  
-  if (regex.test(content)) {
-    return content.replace(regex, newLine);
-  } else {
-    return content + `\n${newLine}`;
-  }
-}
-
-function commentOutSendGrid(content) {
-  return content
-    .replace(/^SENDGRID_API_KEY=/gm, '# SENDGRID_API_KEY=')
-    .replace(/^SENDGRID_FROM_EMAIL=/gm, '# SENDGRID_FROM_EMAIL=')
-    .replace(/^SENDGRID_FROM_NAME=/gm, '# SENDGRID_FROM_NAME=');
-}
-
-function commentOutSMTP(content) {
-  return content
-    .replace(/^SMTP_HOST=/gm, '# SMTP_HOST=')
-    .replace(/^SMTP_PORT=/gm, '# SMTP_PORT=')
-    .replace(/^SMTP_USER=/gm, '# SMTP_USER=')
-    .replace(/^SMTP_PASS=/gm, '# SMTP_PASS=')
-    .replace(/^SMTP_SECURE=/gm, '# SMTP_SECURE=');
-}
-
-// Run the setup
 setupEmailConfig().catch(console.error);
-

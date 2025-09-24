@@ -146,6 +146,20 @@ export class MultiAccountEmailService {
    * Send email using specified account
    */
   public async sendEmail(accountKey: EmailAccount, options: EmailOptions): Promise<boolean> {
+    const emailId = `email_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    logger.info(`📧 EMAIL SEND ATTEMPT [${emailId}]`, {
+      accountKey,
+      to: options.to,
+      subject: options.subject,
+      hasAttachments: !!(options.attachments && options.attachments.length > 0),
+      attachmentCount: options.attachments?.length || 0,
+      hasHtml: !!options.html,
+      hasText: !!options.text,
+      ccCount: options.cc?.length || 0,
+      bccCount: options.bcc?.length || 0
+    });
+
     try {
       const transporter = this.transporters.get(accountKey);
       const config = this.accountConfigs.get(accountKey);
@@ -156,17 +170,17 @@ export class MultiAccountEmailService {
         const defaultConfig = this.accountConfigs.get('default');
         
         if (!defaultTransporter || !defaultConfig) {
-          logger.error(`No email transporter available for account '${accountKey}' and no default fallback`);
+          logger.error(`❌ EMAIL FAILED [${emailId}] - No email transporter available for account '${accountKey}' and no default fallback`);
           return false;
         }
 
-        logger.warn(`Email account '${accountKey}' not available, using default account`);
-        return this.sendEmailWithTransporter(defaultTransporter, defaultConfig, options);
+        logger.warn(`⚠️ EMAIL FALLBACK [${emailId}] - Email account '${accountKey}' not available, using default account`);
+        return this.sendEmailWithTransporter(defaultTransporter, defaultConfig, options, emailId);
       }
 
-      return this.sendEmailWithTransporter(transporter, config, options);
+      return this.sendEmailWithTransporter(transporter, config, options, emailId);
     } catch (error) {
-      logger.error(`Failed to send email using account '${accountKey}':`, error);
+      logger.error(`❌ EMAIL FAILED [${emailId}] - Failed to send email using account '${accountKey}':`, error);
       return false;
     }
   }
@@ -174,7 +188,8 @@ export class MultiAccountEmailService {
   private async sendEmailWithTransporter(
     transporter: Transporter,
     config: EmailAccountConfig,
-    options: EmailOptions
+    options: EmailOptions,
+    emailId: string
   ): Promise<boolean> {
     try {
       const mailOptions = {
@@ -188,11 +203,33 @@ export class MultiAccountEmailService {
         attachments: options.attachments,
       };
 
+      logger.info(`📤 SENDING EMAIL [${emailId}]`, {
+        from: config.fromEmail,
+        to: options.to,
+        subject: options.subject,
+        provider: config.host,
+        hasAttachments: !!(options.attachments && options.attachments.length > 0)
+      });
+
       await transporter.sendMail(mailOptions);
-      logger.info(`Email sent successfully to ${options.to} using ${config.fromEmail}`);
+      
+      logger.info(`✅ EMAIL SENT SUCCESSFULLY [${emailId}]`, {
+        to: options.to,
+        from: config.fromEmail,
+        provider: config.host,
+        subject: options.subject,
+        attachmentCount: options.attachments?.length || 0
+      });
+      
       return true;
     } catch (error) {
-      logger.error(`Failed to send email:`, error);
+      logger.error(`❌ EMAIL SEND FAILED [${emailId}]`, {
+        to: options.to,
+        from: config.fromEmail,
+        provider: config.host,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       return false;
     }
   }

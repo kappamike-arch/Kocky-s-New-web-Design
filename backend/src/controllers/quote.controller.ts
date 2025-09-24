@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../server';
 import { AuthRequest } from '../middleware/auth';
-import { sendEmail } from '../utils/email';
+import { sendEmail, sendEmailWithAccount } from '../utils/email';
 import { createPaymentLink, calculateDepositAmount } from '../utils/payment';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PDFService } from '../services/pdf.service';
+import { emailService } from '../services/emailService';
+import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';
 
@@ -313,8 +315,60 @@ export const updateQuoteStatus = async (req: AuthRequest, res: Response, next: N
   }
 };
 
-// Send quote to customer
+// Send quote to customer (NEW PRODUCTION-GRADE IMPLEMENTATION)
 export const sendQuote = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { mode = 'full', email } = req.body; // 'deposit' or 'full', email (for admin panel compatibility)
+
+    // Handle admin panel compatibility - if email is provided but no mode, default to 'full'
+    const paymentMode = mode || 'full';
+
+    // Validate payment mode
+    if (!['deposit', 'full'].includes(paymentMode)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment mode. Must be "deposit" or "full"'
+      });
+    }
+
+    // Use the working quote email service
+    const { sendQuoteEmail } = await import('../services/quoteEmail.service');
+    const result = await sendQuoteEmail(id, paymentMode);
+
+    res.json({
+      success: true,
+      message: 'Quote sent successfully',
+      checkoutUrl: result.checkoutUrl,
+      sessionId: result.sessionId
+    });
+
+  } catch (error) {
+    console.error('Error sending quote:', error);
+    
+    // Handle specific error cases
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          message: error.message
+        });
+      }
+      
+      if (error.message.includes('email is required')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        });
+      }
+    }
+
+    next(error);
+  }
+};
+
+// Send quote to customer (LEGACY IMPLEMENTATION - DISABLED TO USE NEW SYSTEM)
+export const sendQuoteLegacy_DISABLED = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { message: customMessage, generatePaymentLink = true } = req.body;
@@ -390,25 +444,167 @@ export const sendQuote = async (req: AuthRequest, res: Response, next: NextFunct
       itemsHtml += '</tr></tfoot></table>';
     }
 
-    // Send email with quote details
+    // Send email with quote details using direct SMTP to bypass routing issues
     try {
-      await sendEmail({
-        to: quote.inquiry.email,
-        subject: `Quote #${quote.quoteNumber} - Kocky's Bar & Grill`,
-        template: 'quote',
-        data: {
-          name: quote.inquiry.name,
-          quoteNumber: quote.quoteNumber,
-          serviceType: quote.inquiry.serviceType,
-          serviceDetails: quote.serviceDetails,
-          items: itemsHtml,
-          totalAmount: quote.amount,
-          validUntil: quote.validUntil?.toLocaleDateString(),
-          terms: quote.terms,
-          notes: quote.notes,
-          customMessage,
+      // Create proper quote email HTML template with payment links
+      const quoteEmailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+            .header { background: #b22222; color: #fff; padding: 30px; text-align: center; }
+            .content { padding: 30px; background: #f9f9f9; }
+            .quote-box { background: white; padding: 25px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .items-table th { background: #f8f9fa; padding: 12px; text-align: left; border: 1px solid #dee2e6; }
+            .items-table td { padding: 10px; border: 1px solid #dee2e6; }
+            .total-row { background: #fff3cd; font-weight: bold; font-size: 16px; }
+            .payment-button { display: inline-block; padding: 15px 30px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; margin: 15px 5px; font-weight: bold; }
+            .deposit-button { background: #ffc107; color: #212529; }
+            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>📋 Your Custom Quote</h1>
+              <p>Quote #${quote.quoteNumber}</p>
+            </div>
+            
+            <div class="content">
+              <p>Dear ${quote.inquiry.name},</p>
+              <p>Thank you for choosing Kocky's Bar & Grill for your <strong>${quote.inquiry.serviceType}</strong> needs!</p>
+              
+              <div class="quote-box">
+                <h2 style="color: #b22222; border-bottom: 2px solid #b22222; padding-bottom: 10px;">Quote Details</h2>
+                <p><strong>Service:</strong> ${quote.inquiry.serviceType}</p>
+                ${quote.inquiry.eventDate ? `<p><strong>Event Date:</strong> ${new Date(quote.inquiry.eventDate).toLocaleDateString()}</p>` : ''}
+                <p><strong>Valid Until:</strong> ${quote.validUntil ? new Date(quote.validUntil).toLocaleDateString() : 'N/A'}</p>
+                
+                ${quote.quoteItems.length > 0 ? `
+                  <h3>Quote Breakdown</h3>
+                  <table class="items-table">
+                    <thead>
+                      <tr>
+                        <th>Description</th>
+                        <th style="text-align: center;">Qty</th>
+                        <th style="text-align: right;">Unit Price</th>
+                        <th style="text-align: right;">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${quote.quoteItems.map(item => `
+                        <tr>
+                          <td style="padding: 8px; border-bottom: 1px solid #E2E8F0;">${item.description}</td>
+                          <td style="padding: 8px; border-bottom: 1px solid #E2E8F0; text-align: center;">${item.quantity}</td>
+                          <td style="padding: 8px; border-bottom: 1px solid #E2E8F0; text-align: right;">$${Number(item.unitPrice).toFixed(2)}</td>
+                          <td style="padding: 8px; border-bottom: 1px solid #E2E8F0; text-align: right;">$${Number(item.total).toFixed(2)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                    <tfoot>
+                      <tr class="total-row">
+                        <td colspan="3" style="text-align: right; padding: 15px;">Total Amount:</td>
+                        <td style="text-align: right; padding: 15px; color: #b22222; font-size: 18px;">$${Number(quote.amount).toFixed(2)}</td>
+                      </tr>
+                      ${quote.depositAmount ? `
+                      <tr>
+                        <td colspan="3" style="text-align: right; padding: 8px;">Deposit Required:</td>
+                        <td style="text-align: right; padding: 8px;">$${Number(quote.depositAmount).toFixed(2)}</td>
+                      </tr>
+                      ` : ''}
+                    </tfoot>
+                  </table>
+                ` : `
+                  <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0;">
+                    <h3 style="color: #b22222; margin: 0 0 10px 0;">Total Amount: $${Number(quote.amount).toFixed(2)}</h3>
+                    ${quote.depositAmount ? `<p style="margin: 0;">Deposit Required: $${Number(quote.depositAmount).toFixed(2)}</p>` : ''}
+                  </div>
+                `}
+                
+                ${quote.terms ? `
+                  <div style="margin-top: 25px;">
+                    <h3>Terms & Conditions</h3>
+                    <p style="font-size: 14px; color: #666; background: #f8f9fa; padding: 15px; border-radius: 5px;">${quote.terms}</p>
+                  </div>
+                ` : ''}
+                
+                ${customMessage || quote.notes ? `
+                  <div style="margin-top: 20px;">
+                    <h3>Additional Notes</h3>
+                    <p style="background: #fff3cd; padding: 15px; border-radius: 5px;">${customMessage || quote.notes}</p>
+                  </div>
+                ` : ''}
+              </div>
+              
+              ${paymentLink ? `
+                <div style="text-align: center; margin: 30px 0;">
+                  <h3>💳 Secure Online Payment</h3>
+                  ${quote.depositAmount ? `
+                    <a href="${paymentLink}?amount=${Number(quote.depositAmount) * 100}" class="payment-button deposit-button">
+                      Pay Deposit ($${Number(quote.depositAmount).toFixed(2)})
+                    </a>
+                    <a href="${paymentLink}?amount=${Number(quote.amount) * 100}" class="payment-button">
+                      Pay Full Amount ($${Number(quote.amount).toFixed(2)})
+                    </a>
+                  ` : `
+                    <a href="${paymentLink}?amount=${Number(quote.amount) * 100}" class="payment-button">
+                      Pay Now ($${Number(quote.amount).toFixed(2)})
+                    </a>
+                  `}
+                </div>
+              ` : ''}
+              
+              <div style="background: #e7f3ff; border-left: 4px solid #007bff; padding: 20px; margin: 25px 0;">
+                <h3>📞 Next Steps</h3>
+                <p>To proceed with this quote:</p>
+                <ul>
+                  <li>Reply to this email with any questions</li>
+                  <li>Call us at <strong>(555) 123-4567</strong></li>
+                  ${paymentLink ? '<li>Use the secure payment links above</li>' : ''}
+                  <li>Visit us in person at our location</li>
+                </ul>
+              </div>
+              
+              <p>We look forward to making your event memorable!</p>
+              <p>Best regards,<br><strong>The Kocky's Quotes Team</strong></p>
+            </div>
+            
+            <div class="footer">
+              <p>© 2024 Kocky's Bar & Grill | 123 Main Street, City, State 12345</p>
+              <p>Phone: (555) 123-4567 | Email: quotes@kockysbar.com | www.kockysbar.com</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Send email using direct SMTP to completely bypass email service routing
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_PORT === '465',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
         },
+        tls: {
+          ciphers: 'SSLv3',
+          rejectUnauthorized: false,
+        },
+        requireTLS: true,
       });
+
+      await transporter.sendMail({
+        from: `"Kocky's Bar & Grill" <${process.env.SMTP_USER}>`,
+        to: quote.inquiry.email,
+        subject: `📋 Quote #${quote.quoteNumber} from Kocky's Bar & Grill`,
+        html: quoteEmailHtml,
+      });
+
+      console.log(`✅ Quote email sent directly via SMTP to ${quote.inquiry.email}`);
 
       // Log email activity
       await prisma.emailLog.create({
@@ -673,8 +869,11 @@ export const emailQuotePDF = async (req: Request, res: Response, next: NextFunct
         eventDate: quote.inquiry.eventDate ? new Date(quote.inquiry.eventDate).toLocaleDateString() : 'TBD',
         serviceType: quote.inquiry.serviceType,
         total: total.toFixed(2),
+        deposit: quote.depositAmount ? Number(quote.depositAmount).toFixed(2) : undefined,
         validUntil: quote.validUntil ? new Date(quote.validUntil).toLocaleDateString() : 'N/A',
+        terms: quote.terms,
         message: message || 'Thank you for choosing Kocky\'s Bar & Grill! Please find your quote attached.',
+        paymentLink: quote.paymentLink,
         viewQuoteUrl: quote.paymentLink || `${process.env.FRONTEND_URL}/quotes/${quote.id}/view`,
       },
       attachments: [
@@ -784,3 +983,4 @@ export const previewQuotePDF = async (req: Request, res: Response, next: NextFun
     next(error);
   }
 };
+

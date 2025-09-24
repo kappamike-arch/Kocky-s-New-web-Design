@@ -5,19 +5,20 @@ export class QuoteService {
   /**
    * Attach a Stripe payment session to a quote
    */
-  static async attachPaymentSession(quoteId: string, sessionId: string, mode: 'deposit' | 'full'): Promise<void> {
+  static async attachPaymentSession(quoteId: string, sessionId: string, checkoutUrl: string, mode: 'deposit' | 'full'): Promise<void> {
     try {
       await prisma.quote.update({
         where: { id: quoteId },
         data: {
           stripeSessionId: sessionId,
-          paymentLink: `https://checkout.stripe.com/pay/${sessionId}`
+          paymentLink: checkoutUrl
         }
       });
 
       logger.info('Payment session attached to quote', {
         quoteId,
         sessionId,
+        checkoutUrl,
         mode
       });
     } catch (error) {
@@ -25,6 +26,7 @@ export class QuoteService {
         error: error instanceof Error ? error.message : 'Unknown error',
         quoteId,
         sessionId,
+        checkoutUrl,
         mode
       });
       throw error;
@@ -188,6 +190,95 @@ export class QuoteService {
       logger.error('Failed to get quote with totals', {
         error: error instanceof Error ? error.message : 'Unknown error',
         quoteId
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Send quote email with Stripe checkout and PDF attachment (DEPRECATED - Use quoteEmail.service.ts instead)
+   */
+  static async sendQuoteEmail(quoteId: string, paymentMode: 'deposit' | 'full') {
+    const processId = `quote_service_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    logger.warn(`⚠️ USING DEPRECATED sendQuoteEmail [${processId}] - Use quoteEmail.service.ts instead`, {
+      quoteId,
+      paymentMode
+    });
+
+    try {
+      // Get quote with all related data
+      const quote = await prisma.quote.findUnique({
+        where: { id: quoteId },
+        include: {
+          inquiry: true,
+          quoteItems: true
+        }
+      });
+
+      if (!quote) {
+        throw new Error('Quote not found');
+      }
+
+      if (!quote.inquiry) {
+        throw new Error('Quote inquiry not found');
+      }
+
+      if (!quote.inquiry.email) {
+        throw new Error('Customer email is required to send quote');
+      }
+
+      logger.info(`📋 QUOTE DATA LOADED [${processId}]`, {
+        quoteId: quote.id,
+        quoteNumber: quote.quoteNumber,
+        customerName: quote.inquiry.name,
+        customerEmail: quote.inquiry.email,
+        itemCount: quote.quoteItems?.length || 0,
+        totalAmount: quote.amount
+      });
+
+      // Import the email composer
+      const { emailQuote } = await import('./quoteEmail.composer');
+      
+      // Send the quote email
+      const result = await emailQuote({
+        quote: quote as any,
+        paymentMode
+      });
+
+      // Persist Stripe checkout URL and session ID
+      await this.attachPaymentSession(quoteId, result.sessionId, result.checkoutUrl, paymentMode);
+
+      // Update quote status to SENT
+      await prisma.quote.update({
+        where: { id: quoteId },
+        data: {
+          status: 'SENT',
+          sentToCustomer: true,
+          sentAt: new Date()
+        }
+      });
+
+      logger.info(`✅ QUOTE EMAIL SENT SUCCESSFULLY [${processId}]`, {
+        quoteId,
+        paymentMode,
+        checkoutUrl: result.checkoutUrl,
+        sessionId: result.sessionId,
+        customerEmail: quote.inquiry.email
+      });
+
+      return {
+        success: true,
+        checkoutUrl: result.checkoutUrl,
+        sessionId: result.sessionId
+      };
+
+    } catch (error) {
+      logger.error(`❌ QUOTE EMAIL FAILED [${processId}]`, {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        quoteId,
+        paymentMode,
+        stack: error instanceof Error ? error.stack : undefined
       });
       throw error;
     }

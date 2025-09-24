@@ -1,0 +1,39 @@
+
+Your Quote from Kocky's Bar & Grill
+
+Hello Michael Smith,
+
+Thank you for considering Kocky's Bar & Grill for your upcoming event. Please review your quote details below:
+
+Quote #Q-PREVIEW-001
+Service Type: Catering
+Event Date: November 15, 2025
+Valid Until: October 30, 2025
+
+Service Items:
+- Professional Bartender Service (Qty: 2) - $150.00 each = $300.00
+- Premium Food Catering (75 guests) (Qty: 1) - $800.00 each = $800.00
+- Setup & Cleanup Service (Qty: 1) - $200.00 each = $200.00
+- Gratuity (20%) (Qty: 1) - $260.00 each = $260.00
+
+Quote Breakdown:
+Subtotal: $1,300.00
+Gratuity: $260.00
+Total Amount: $1,560.00
+
+Pay Now: https://checkout.stripe.com/test-payment-link
+
+Terms & Conditions:
+Payment due upon acceptance. All services subject to availability.
+
+Message:
+This is a preview of the quote email that would be sent. The system is working correctly - just needs proper email credentials.
+
+If you have any questions, feel free to reply to this email or call us at (559) 266-5500.
+
+We look forward to serving you! 🍻
+
+- The Kocky's Team
+
+Kocky's Bar & Grill • 1231 Van Ness Ave, Fresno, CA 93721
+  

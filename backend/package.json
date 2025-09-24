@@ -12,7 +12,13 @@
     "generate": "prisma generate",
     "studio": "prisma studio",
     "seed": "ts-node prisma/seed.ts",
-    "test": "jest"
+    "test": "jest",
+    "diagnose:email": "node diagnose-email-issue.js",
+    "test:email": "node test-basic-email.js",
+    "test:quote-fixes": "node test-quote-fixes-comprehensive.js",
+    "test:quote-system": "node send-test-email.js",
+    "restart:fixes": "node restart-with-fixes.js",
+    "check:server": "node quick-server-check.js"
   },
   "dependencies": {
     "@azure/msal-node": "^3.7.4",

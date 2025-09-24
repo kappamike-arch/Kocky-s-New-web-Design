@@ -5,6 +5,7 @@ import { EmailAccount } from '../services/emailService';
 import { AuthRequest } from '../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
+import { createPaymentLink } from '../utils/payment';
 
 // Get all inquiries with filtering
 export const getInquiries = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -300,6 +301,35 @@ export const createQuote = async (req: AuthRequest, res: Response, next: NextFun
       `;
 
       try {
+        // Generate payment link if amount is provided
+        let paymentLink = null;
+        if (amount && process.env.STRIPE_SECRET_KEY) {
+          try {
+            const amountInCents = Math.round(parseFloat(amount) * 100);
+            const depositInCents = quote.depositAmount ? Math.round(Number(quote.depositAmount) * 100) : 0;
+            
+            paymentLink = await createPaymentLink({
+              quoteId: quote.id,
+              quoteNumber,
+              customerEmail: inquiry.email,
+              customerName: inquiry.name,
+              amount: amountInCents,
+              depositAmount: depositInCents,
+              isDeposit: quote.depositType !== null && quote.depositAmount !== null,
+              description: `Payment for ${inquiry.serviceType} Service - ${quoteNumber}`,
+            });
+
+            // Save payment link to quote
+            await prisma.quote.update({
+              where: { id: quote.id },
+              data: { paymentLink },
+            });
+          } catch (paymentError) {
+            console.error('Failed to generate payment link:', paymentError);
+            // Continue without payment link
+          }
+        }
+
         // Use the new multi-account email service
         const quoteData = {
           customerName: inquiry.name,
@@ -308,6 +338,7 @@ export const createQuote = async (req: AuthRequest, res: Response, next: NextFun
           serviceType: inquiry.serviceType,
           eventDate: inquiry.eventDate ? new Date(inquiry.eventDate).toLocaleDateString() : undefined,
           totalAmount: parseFloat(amount),
+          depositAmount: quote.depositAmount ? Number(quote.depositAmount) : undefined,
           items: quote.quoteItems.map((item: any) => ({
             description: item.description,
             quantity: item.quantity,
@@ -315,6 +346,7 @@ export const createQuote = async (req: AuthRequest, res: Response, next: NextFun
             subtotal: parseFloat(item.total.toString())
           })),
           validUntil: validUntil ? new Date(validUntil).toLocaleDateString() : 'TBD',
+          paymentLink: paymentLink || undefined,
           terms,
           notes
         };

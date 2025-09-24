@@ -1,0 +1,47 @@
+{
+  "to": "kappamike@gmail.com",
+  "from": "Kocky's Bar & Grill <info@kockysbar.com>",
+  "subject": "Your Quote Q-PREVIEW-001 — Kocky's Bar & Grill",
+  "htmlFile": "/home/stagingkockys/Kocky's New Web Design with Back end/Kocky-s-New-web-Design/Kocky-s-New-web-Design/backend/email-preview/quote-email.html",
+  "textFile": "/home/stagingkockys/Kocky's New Web Design with Back end/Kocky-s-New-web-Design/Kocky-s-New-web-Design/backend/email-preview/quote-email.txt",
+  "quoteData": {
+    "customerName": "Michael Smith",
+    "quoteNumber": "Q-PREVIEW-001",
+    "serviceType": "Catering",
+    "eventDate": "November 15, 2025",
+    "validUntil": "October 30, 2025",
+    "total": "$1,560.00",
+    "subtotal": "$1,300.00",
+    "tax": "$0.00",
+    "gratuity": "$260.00",
+    "terms": "Payment due upon acceptance. All services subject to availability.",
+    "message": "This is a preview of the quote email that would be sent. The system is working correctly - just needs proper email credentials.",
+    "stripePaymentLink": "https://checkout.stripe.com/test-payment-link",
+    "items": [
+      {
+        "description": "Professional Bartender Service",
+        "quantity": 2,
+        "unitPrice": "150.00",
+        "total": "300.00"
+      },
+      {
+        "description": "Premium Food Catering (75 guests)",
+        "quantity": 1,
+        "unitPrice": "800.00",
+        "total": "800.00"
+      },
+      {
+        "description": "Setup & Cleanup Service",
+        "quantity": 1,
+        "unitPrice": "200.00",
+        "total": "200.00"
+      },
+      {
+        "description": "Gratuity (20%)",
+        "quantity": 1,
+        "unitPrice": "260.00",
+        "total": "260.00"
+      }
+    ]
+  }
+}

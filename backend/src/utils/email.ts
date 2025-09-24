@@ -17,10 +17,24 @@ interface EmailOptions {
   accountKey?: EmailAccount;
   cc?: string[];
   bcc?: string[];
+  attachments?: Array<{
+    filename: string;
+    content: Buffer;
+    contentType?: string;
+  }>;
 }
 
 // Email templates
-const getEmailTemplate = (template: string, data: any) => {
+export const getEmailTemplate = (template: string, data: any) => {
+  const templateId = `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  logger.info(`📧 EMAIL TEMPLATE RENDERING [${templateId}]`, {
+    template,
+    hasData: !!data,
+    dataKeys: data ? Object.keys(data) : [],
+    isQuoteTemplate: template === 'quote'
+  });
+
   const templates: { [key: string]: { html: string; text: string } } = {
     welcome: {
       html: `
@@ -157,13 +171,158 @@ const getEmailTemplate = (template: string, data: any) => {
       `,
       text: `Booking Request Received!\n\nHi ${data.name},\n\nThank you for your interest in ${data.bookingType} from Kocky's Bar & Grill!\n\nEvent Details:\nEvent Date: ${data.date}\n${data.eventTime ? `Event Time: ${data.eventTime}\n` : ''}${data.guestCount ? `Expected Guests: ${data.guestCount}\n` : ''}${data.location ? `Location: ${data.location}\n` : ''}Confirmation Code: ${data.confirmationCode}\n\nOur team will review your request and contact you within 24 hours with a customized quote.\n\nIf you have any immediate questions, please call us at (555) 123-4567 or reply to this email.\n\nThank you for choosing Kocky's Bar & Grill!\n\nCheers,\nThe Kocky's Team\n\nKocky's Bar & Grill | 123 Main Street | Your City, State 12345\nwww.kockysbar.com | info@kockys.com`,
     },
+    'quote': {
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Your Quote from Kocky's Bar & Grill</title>
+          <style>
+            body { font-family: Arial, sans-serif; background-color: #f8f8f8; margin: 0; padding: 0; color: #333; }
+            .container { max-width: 640px; margin: 30px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(90deg, #e63946, #fca311); color: #fff; padding: 20px; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; }
+            .content { padding: 30px; line-height: 1.6; }
+            .quote-summary { background: #f4f4f4; padding: 15px; border-radius: 6px; margin: 20px 0; }
+            .btn { display: inline-block; background: #e63946; color: #fff; padding: 14px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; }
+            .footer { background: #333; color: #fff; text-align: center; padding: 15px; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header"><h1>Kocky's Bar & Grill</h1></div>
+            <div class="content">
+              <p>Hello ${data.customerName},</p>
+              <p>Thank you for considering Kocky's Bar & Grill for your upcoming event. Please review the details of your quote below:</p>
+              <div class="quote-summary">
+                <p><strong>Quote Number:</strong> ${data.quoteNumber}</p>
+                <p><strong>Service Type:</strong> ${data.serviceType || 'Catering Services'}</p>
+                ${data.eventDate ? `<p><strong>Event Date:</strong> ${data.eventDate}</p>` : ''}
+                <p><strong>Valid Until:</strong> ${data.validUntil}</p>
+                
+                <div style="margin: 20px 0; padding: 15px; background: #fff; border-radius: 6px; border: 1px solid #ddd;">
+                  <h3 style="margin: 0 0 15px 0; color: #e63946;">Quote Breakdown</h3>
+                  
+                  ${data.items && data.items.length > 0 ? `
+                  <div style="margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; color: #333; font-size: 16px;">Service Items</h4>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                      <thead>
+                        <tr style="background-color: #f8f9fa;">
+                          <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">Description</th>
+                          <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">Qty</th>
+                          <th style="padding: 10px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">Unit Price</th>
+                          <th style="padding: 10px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${data.items.map((item: any) => `
+                        <tr>
+                          <td style="padding: 10px; border: 1px solid #dee2e6;">${item.description}</td>
+                          <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">${item.quantity}</td>
+                          <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">$${item.unitPrice}</td>
+                          <td style="padding: 10px; text-align: right; border: 1px solid #dee2e6;">$${item.total}</td>
+                        </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                  ` : ''}
+                  
+                  <div style="border-top: 1px solid #dee2e6; padding-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                      <span>Subtotal:</span>
+                      <span>${data.subtotal || data.total}</span>
+                    </div>
+                    ${data.tax && data.tax !== '$0.00' ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                      <span>Tax:</span>
+                      <span>${data.tax}</span>
+                    </div>
+                    ` : ''}
+                    ${data.gratuity && data.gratuity !== '$0.00' ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                      <span>Gratuity:</span>
+                      <span>${data.gratuity}</span>
+                    </div>
+                    ` : ''}
+                    <div style="display: flex; justify-content: space-between; padding: 12px 0; font-size: 18px; font-weight: bold; color: #e63946; border-top: 2px solid #e63946; margin-top: 10px;">
+                      <span>Total Amount:</span>
+                      <span>${data.total}</span>
+                    </div>
+                    ${data.deposit ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #fca311; font-weight: bold; margin-top: 10px;">
+                      <span>Deposit Required:</span>
+                      <span>${data.deposit}</span>
+                    </div>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+              <p>You can download a PDF version of this quote from the attachment, or pay securely online using the button below:</p>
+              <p style="text-align:center;"><a href="${data.stripePaymentLink}" class="btn">Pay Now</a></p>
+              <p>If you have any questions, feel free to reply to this email or call us at (559) 266-5500.</p>
+              <p>We look forward to serving you! 🍻</p>
+              <p>- The Kocky's Team</p>
+            </div>
+            <div class="footer">
+              Kocky's Bar & Grill • 1231 Van Ness Ave, Fresno, CA 93721  
+              <br>
+              <a href="${data.unsubscribeLink}" style="color:#fca311;">Unsubscribe</a>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `Your Quote from Kocky's Bar & Grill\n\nHello ${data.customerName},\n\nThank you for considering Kocky's Bar & Grill for your upcoming event. Please review the details of your quote below:\n\nQuote Details:\nQuote Number: ${data.quoteNumber}\nService Type: ${data.serviceType || 'Catering Services'}\n${data.eventDate ? `Event Date: ${data.eventDate}\n` : ''}Valid Until: ${data.validUntil}\n\n${data.items && data.items.length > 0 ? `Service Items:\n${data.items.map((item: any) => `- ${item.description} (Qty: ${item.quantity}) - $${item.unitPrice} each = $${item.total}`).join('\n')}\n\n` : ''}Quote Breakdown:\nSubtotal: ${data.subtotal || data.total}\n${data.tax && data.tax !== '$0.00' ? `Tax: ${data.tax}\n` : ''}${data.gratuity && data.gratuity !== '$0.00' ? `Gratuity: ${data.gratuity}\n` : ''}Total Amount: ${data.total}\n${data.deposit ? `Deposit Required: ${data.deposit}\n` : ''}\nYou can download a PDF version of this quote from the attachment, or pay securely online using the link below:\n\nPay Now: ${data.stripePaymentLink}\n\nIf you have any questions, feel free to reply to this email or call us at (559) 266-5500.\n\nWe look forward to serving you! 🍻\n\n- The Kocky's Team\n\nKocky's Bar & Grill • 1231 Van Ness Ave, Fresno, CA 93721\nUnsubscribe: ${data.unsubscribeLink}`,
+    },
   };
 
-  const template_data = templates[template] || templates.welcome;
+  // CRITICAL FIX: Do not fallback to welcome template for quote emails
+  if (template === 'quote' && !templates[template]) {
+    throw new Error(`Quote template not found. Available templates: ${Object.keys(templates).join(', ')}`);
+  }
+  
+  const template_data = templates[template];
+  
+  if (!template_data) {
+    throw new Error(`Template "${template}" not found. Available templates: ${Object.keys(templates).join(', ')}`);
+  }
+  
+  // Debug logging for template selection
+  console.log(`🔍 TEMPLATE SELECTION DEBUG:`);
+  console.log(`   Requested template: "${template}"`);
+  console.log(`   Available templates: ${Object.keys(templates).join(', ')}`);
+  console.log(`   Template found: ${templates[template] ? 'YES' : 'NO'}`);
+  console.log(`   Using template: "${template}"`);
+  
+  // Log template rendering result
+  logger.info(`✅ EMAIL TEMPLATE RENDERED [${templateId}]`, {
+    template,
+    htmlLength: template_data.html.length,
+    textLength: template_data.text.length,
+    hasStripeLink: template_data.html.includes('stripePaymentLink'),
+    hasQuoteDetails: template_data.html.includes('Quote Breakdown'),
+    hasPayNowButton: template_data.html.includes('Pay Now')
+  });
+  
   return template_data;
 };
 
 export const sendEmail = async (options: EmailOptions) => {
+  const emailId = `email_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  logger.info(`📧 EMAIL SEND ATTEMPT [${emailId}]`, {
+    to: options.to,
+    subject: options.subject,
+    template: options.template,
+    hasAttachments: !!(options.attachments && options.attachments.length > 0),
+    attachmentCount: options.attachments?.length || 0,
+    hasData: !!options.data,
+    dataKeys: options.data ? Object.keys(options.data) : []
+  });
+
   try {
     const { html, text } = getEmailTemplate(options.template, options.data);
 
@@ -179,6 +338,13 @@ export const sendEmail = async (options: EmailOptions) => {
       process.env.SENDGRID_API_KEY !== 'SG.your-sendgrid-api-key-here' &&
       process.env.SENDGRID_API_KEY.startsWith('SG.');
 
+    logger.info(`🔧 EMAIL SERVICE CONFIGURATION [${emailId}]`, {
+      hasValidO365,
+      hasValidSendGrid,
+      hasAttachments: !!(options.attachments && options.attachments.length > 0),
+      willSkipO365: !!(options.attachments && options.attachments.length > 0) // O365 doesn't support attachments
+    });
+
     // Check if SMTP is properly configured (not placeholder)
     const hasValidSMTP = process.env.SMTP_HOST && 
       process.env.SMTP_USER && 
@@ -186,29 +352,83 @@ export const sendEmail = async (options: EmailOptions) => {
       process.env.SMTP_USER !== 'your-email@gmail.com' &&
       process.env.SMTP_PASS !== 'your-app-specific-password';
 
+    // Use Office 365 Graph API (Priority 1) - ENABLED FOR QUOTE SYSTEM
+    // Office 365 Graph API supports attachments
     if (hasValidO365) {
-      // Use Office 365 Graph API (Priority 1)
-      const success = await o365EmailService.sendEmail({
+      logger.info(`📤 ATTEMPTING EMAIL VIA OFFICE 365 [${emailId}]`, {
         to: options.to,
         subject: options.subject,
-        html: html,
-        text: text,
-        cc: options.cc,
-        bcc: options.bcc,
+        hasAttachments: !!(options.attachments && options.attachments.length > 0),
+        attachmentCount: options.attachments?.length || 0,
+        provider: 'Office 365 Graph API'
       });
 
-      if (success) {
-        logger.info(`✅ Email sent to ${options.to} via Office 365 Graph API`);
-        return true;
-      } else {
-        logger.warn(`⚠️ Office 365 email failed, trying fallback service...`);
+      try {
+        const success = await o365EmailService.sendEmail({
+          to: options.to,
+          subject: options.subject,
+          html: html,
+          text: text,
+          cc: options.cc,
+          bcc: options.bcc,
+          attachments: options.attachments,
+        });
+
+        if (success) {
+          logger.info(`✅ EMAIL SENT VIA OFFICE 365 [${emailId}]`, {
+            to: options.to,
+            subject: options.subject,
+            provider: 'Office 365 Graph API',
+            success: true
+          });
+          return true;
+        } else {
+          logger.error(`❌ OFFICE 365 EMAIL FAILED [${emailId}]`, {
+            to: options.to,
+            subject: options.subject,
+            provider: 'Office 365 Graph API',
+            success: false,
+            reason: 'O365 service returned false'
+          });
+          // Fall through to try other services
+        }
+      } catch (error) {
+        logger.error(`❌ OFFICE 365 EMAIL ERROR [${emailId}]`, {
+          to: options.to,
+          subject: options.subject,
+          provider: 'Office 365 Graph API',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        });
         // Fall through to try other services
       }
+    } else if (hasValidO365 && options.attachments && options.attachments.length > 0) {
+      // Office 365 Graph API supports attachments, so we can proceed
+      logger.info(`📎 OFFICE 365 WITH ATTACHMENTS [${emailId}]`, {
+        to: options.to,
+        subject: options.subject,
+        attachmentCount: options.attachments.length,
+        reason: 'O365 Graph API supports attachments'
+      });
+    } else if (!hasValidO365) {
+      logger.warn(`⚠️ OFFICE 365 NOT CONFIGURED [${emailId}]`, {
+        to: options.to,
+        subject: options.subject,
+        reason: 'Missing O365 credentials'
+      });
     }
 
     if (hasValidSendGrid) {
+      logger.info(`📤 SENDING EMAIL VIA SENDGRID [${emailId}]`, {
+        to: options.to,
+        subject: options.subject,
+        hasAttachments: !!(options.attachments && options.attachments.length > 0),
+        attachmentCount: options.attachments?.length || 0,
+        fromEmail: process.env.SENDGRID_FROM_EMAIL || 'noreply@kockysbar.com'
+      });
+
       // Use SendGrid
-      const msg = {
+      const msg: any = {
         to: options.to,
         from: {
           email: process.env.SENDGRID_FROM_EMAIL || 'noreply@kockysbar.com',
@@ -219,9 +439,48 @@ export const sendEmail = async (options: EmailOptions) => {
         html,
       };
 
-      await sgMail.send(msg);
-      logger.info(`✅ Email sent to ${options.to} via SendGrid`);
-      return true;
+      // Add CC and BCC if provided
+      if (options.cc && options.cc.length > 0) {
+        msg.cc = options.cc;
+      }
+      if (options.bcc && options.bcc.length > 0) {
+        msg.bcc = options.bcc;
+      }
+
+      // Add attachments if provided
+      if (options.attachments && options.attachments.length > 0) {
+        msg.attachments = options.attachments.map(attachment => ({
+          content: attachment.content.toString('base64'),
+          filename: attachment.filename,
+          type: attachment.contentType || 'application/pdf',
+          disposition: 'attachment'
+        }));
+      }
+
+      try {
+        await sgMail.send(msg);
+        logger.info(`✅ EMAIL SENT VIA SENDGRID [${emailId}]`, {
+          to: options.to,
+          subject: options.subject,
+          hasAttachments: !!(options.attachments && options.attachments.length > 0),
+          attachmentCount: options.attachments?.length || 0,
+          provider: 'SendGrid',
+          attachmentFilenames: options.attachments?.map(a => a.filename) || [],
+          success: true
+        });
+        return true;
+      } catch (error) {
+        logger.error(`❌ SENDGRID EMAIL FAILED [${emailId}]`, {
+          to: options.to,
+          subject: options.subject,
+          provider: 'SendGrid',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          hasAttachments: !!(options.attachments && options.attachments.length > 0),
+          attachmentCount: options.attachments?.length || 0
+        });
+        // Fall through to try SMTP
+      }
     } else if (hasValidSMTP) {
       // Use SMTP (Nodemailer)
       const transporter = nodemailer.createTransport({
@@ -245,53 +504,114 @@ export const sendEmail = async (options: EmailOptions) => {
         await transporter.verify();
       }
 
-      await transporter.sendMail({
+      const mailOptions: any = {
         from: `"${process.env.SENDGRID_FROM_NAME || "Kocky's Bar & Grill"}" <${process.env.SMTP_USER}>`,
         to: options.to,
         subject: `✅ ${options.subject}`,
         text,
         html,
-      });
+      };
 
-      logger.info(`✅ Email sent to ${options.to} via SMTP`);
-      return true;
+      // Add CC and BCC if provided
+      if (options.cc && options.cc.length > 0) {
+        mailOptions.cc = options.cc;
+      }
+      if (options.bcc && options.bcc.length > 0) {
+        mailOptions.bcc = options.bcc;
+      }
+
+      // Add attachments if provided
+      if (options.attachments && options.attachments.length > 0) {
+        mailOptions.attachments = options.attachments.map(attachment => ({
+          filename: attachment.filename,
+          content: attachment.content,
+          contentType: attachment.contentType || 'application/pdf'
+        }));
+      }
+
+      try {
+        await transporter.sendMail(mailOptions);
+        logger.info(`✅ EMAIL SENT VIA SMTP [${emailId}]`, {
+          to: options.to,
+          subject: options.subject,
+          provider: 'SMTP',
+          hasAttachments: !!(options.attachments && options.attachments.length > 0),
+          attachmentCount: options.attachments?.length || 0,
+          success: true
+        });
+        return true;
+      } catch (error) {
+        logger.error(`❌ SMTP EMAIL FAILED [${emailId}]`, {
+          to: options.to,
+          subject: options.subject,
+          provider: 'SMTP',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          hasAttachments: !!(options.attachments && options.attachments.length > 0),
+          attachmentCount: options.attachments?.length || 0
+        });
+        // All services failed
+        throw error;
+      }
     } else {
       // Log email details when no valid email service is configured
-      logger.warn(`📧 Email service not configured - would send to ${options.to}:`, {
+      logger.error(`❌ NO EMAIL SERVICE CONFIGURED [${emailId}]`, {
+        to: options.to,
         subject: options.subject,
         template: options.template,
-        to: options.to,
-        timestamp: new Date().toISOString(),
-        data: options.data,
+        hasO365: hasValidO365,
+        hasSendGrid: hasValidSendGrid,
+        hasSMTP: hasValidSMTP,
+        reason: 'No email service credentials found'
       });
       
       // In development, also log to console for visibility
       if (process.env.NODE_ENV === 'development') {
-        console.log(`\n📧 EMAIL NOT SENT (Service not configured):`);
+        console.log(`\n❌ EMAIL NOT SENT - NO SERVICE CONFIGURED [${emailId}]:`);
         console.log(`   To: ${options.to}`);
         console.log(`   Subject: ${options.subject}`);
         console.log(`   Template: ${options.template}`);
+        console.log(`   Office 365: ${hasValidO365 ? '✅' : '❌'}`);
+        console.log(`   SendGrid: ${hasValidSendGrid ? '✅' : '❌'}`);
+        console.log(`   SMTP: ${hasValidSMTP ? '✅' : '❌'}`);
         console.log(`   Data:`, JSON.stringify(options.data, null, 2));
         console.log(`\n   To fix: Configure Office 365, SendGrid, or SMTP credentials in .env\n`);
       }
       
-      return false; // Indicate email was not sent
+      throw new Error(`No email service configured. Office 365: ${hasValidO365}, SendGrid: ${hasValidSendGrid}, SMTP: ${hasValidSMTP}`);
     }
   } catch (error) {
-    logger.error(`❌ Error sending email to ${options.to}:`, error);
-    
-    // Log email details even when sending fails
-    logger.warn(`📧 Failed email attempt to ${options.to}:`, {
+    logger.error(`❌ EMAIL SEND FAILED [${emailId}]`, {
+      to: options.to,
       subject: options.subject,
       template: options.template,
-      to: options.to,
-      timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : String(error),
-      data: options.data,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
     });
     
-    // Don't throw error - let the calling code handle it
-    return false;
+    // Log email details even when sending fails
+    logger.warn(`📧 FAILED EMAIL ATTEMPT [${emailId}]`, {
+      to: options.to,
+      subject: options.subject,
+      template: options.template,
+      data: options.data,
+      timestamp: new Date().toISOString()
+    });
+    
+    // In development, also log to console for visibility
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`\n❌ EMAIL SEND FAILED [${emailId}]:`);
+      console.log(`   To: ${options.to}`);
+      console.log(`   Subject: ${options.subject}`);
+      console.log(`   Template: ${options.template}`);
+      console.log(`   Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.log(`   Stack: ${error instanceof Error ? error.stack : 'No stack trace'}`);
+      console.log(`\n`);
+    }
+    
+    // Propagate the error instead of returning false
+    throw error;
   }
 };
 

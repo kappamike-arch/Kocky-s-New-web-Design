@@ -85,7 +85,7 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
     });
 
     // Attach payment session to quote
-    await QuoteService.attachPaymentSession(quoteId, session.id, mode);
+    await QuoteService.attachPaymentSession(quoteId, session.id, session.url!, mode);
 
     logger.info('Checkout session created', {
       quoteId,
