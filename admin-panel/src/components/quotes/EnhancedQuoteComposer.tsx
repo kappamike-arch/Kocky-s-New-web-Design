@@ -20,6 +20,8 @@ import { format, addDays } from 'date-fns';
 import Link from 'next/link';
 import { api } from '@/lib/api/client';
 import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 // UUID generation utility
 const generateUUID = () => {
@@ -645,6 +647,134 @@ ADDITIONAL TERMS:
     }
   };
 
+  // Generate PDF function
+  const generatePDF = async () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Set up colors
+      const primaryColor = [0, 0, 0]; // Black
+      const secondaryColor = [100, 100, 100]; // Gray
+      const accentColor = [220, 38, 127]; // Pink accent
+      
+      // Header
+      doc.setFontSize(24);
+      doc.setTextColor(...primaryColor);
+      doc.text('Kocky\'s', 20, 30);
+      
+      doc.setFontSize(16);
+      doc.setTextColor(...secondaryColor);
+      doc.text('Professional Catering & Mobile Bar Services', 20, 40);
+      
+      // Quote metadata
+      doc.setFontSize(14);
+      doc.setTextColor(...primaryColor);
+      doc.text(`Quote ID: ${quoteDetails.quoteId}`, 20, 60);
+      doc.text(`Date Created: ${format(new Date(quoteDetails.dateCreated), 'MMM dd, yyyy')}`, 20, 70);
+      doc.text(`Valid Until: ${format(new Date(quoteDetails.validUntil), 'MMM dd, yyyy')}`, 20, 80);
+      doc.text(`Status: ${quoteDetails.status}`, 20, 90);
+      
+      // Client Information
+      doc.setFontSize(16);
+      doc.setTextColor(...primaryColor);
+      doc.text('Client Information', 20, 110);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(...secondaryColor);
+      doc.text(`Name: ${clientInfo.name}`, 20, 125);
+      doc.text(`Email: ${clientInfo.email}`, 20, 135);
+      doc.text(`Phone: ${clientInfo.phone}`, 20, 145);
+      if (clientInfo.company) {
+        doc.text(`Company: ${clientInfo.company}`, 20, 155);
+      }
+      
+      // Event Details
+      doc.setFontSize(16);
+      doc.setTextColor(...primaryColor);
+      doc.text('Event Details', 20, 175);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(...secondaryColor);
+      doc.text(`Event Type: ${eventInfo.type}`, 20, 190);
+      doc.text(`Date: ${format(new Date(eventInfo.date), 'MMM dd, yyyy')}`, 20, 200);
+      doc.text(`Time: ${eventInfo.startTime} - ${eventInfo.endTime}`, 20, 210);
+      doc.text(`Location: ${eventInfo.venue}`, 20, 220);
+      if (eventInfo.address) {
+        doc.text(`Address: ${eventInfo.address}`, 20, 230);
+      }
+      doc.text(`Guests: ${eventInfo.guestCount}`, 20, 240);
+      
+      // Line Items Table
+      doc.setFontSize(16);
+      doc.setTextColor(...primaryColor);
+      doc.text('Quote Items', 20, 260);
+      
+      const tableData = lineItems.map(item => [
+        item.description,
+        item.quantity.toString(),
+        `$${Number(item.unitPrice).toFixed(2)}`,
+        item.category === 'labor' ? `${item.hours || 0}h` : '-',
+        `$${Number(item.total).toFixed(2)}`
+      ]);
+      
+      // Add table
+      (doc as any).autoTable({
+        startY: 270,
+        head: [['Description', 'Qty', 'Unit Price', 'Hours', 'Total']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: primaryColor,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        },
+        margin: { left: 20, right: 20 }
+      });
+      
+      // Financial Summary
+      const finalY = (doc as any).lastAutoTable.finalY + 20;
+      
+      doc.setFontSize(16);
+      doc.setTextColor(...primaryColor);
+      doc.text('Financial Summary', 20, finalY);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(...secondaryColor);
+      doc.text(`Subtotal: $${calculateSubtotal().toFixed(2)}`, 20, finalY + 15);
+      doc.text(`Taxable Amount: $${calculateTaxableAmount().toFixed(2)}`, 20, finalY + 25);
+      doc.text(`Tax (${financial.taxRate}%): $${calculateTax().toFixed(2)}`, 20, finalY + 35);
+      
+      doc.setFontSize(14);
+      doc.setTextColor(...primaryColor);
+      doc.text(`Grand Total: $${calculateGrandTotal().toFixed(2)}`, 20, finalY + 50);
+      
+      // Deposit information
+      doc.setFontSize(12);
+      doc.setTextColor(...secondaryColor);
+      const depositAmount = calculateDeposit();
+      doc.text(`Deposit Required: $${depositAmount.toFixed(2)}`, 20, finalY + 65);
+      
+      // Footer note
+      const pageHeight = doc.internal.pageSize.height;
+      doc.setFontSize(10);
+      doc.setTextColor(...secondaryColor);
+      doc.text('This is an automatically generated quote. Final pricing subject to confirmation.', 20, pageHeight - 20);
+      
+      // Generate filename and download
+      const filename = `Quote-${quoteDetails.quoteId}.pdf`;
+      doc.save(filename);
+      
+      toast.success('PDF generated successfully!');
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -1152,12 +1282,12 @@ ADDITIONAL TERMS:
                   Save & Send to Client
                 </Button>
                 <Button 
-                  disabled
+                  onClick={generatePDF}
                   className="w-full"
                   variant="secondary"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Generate PDF (Coming Soon)
+                  Generate PDF
                 </Button>
               </div>
             </CardContent>
