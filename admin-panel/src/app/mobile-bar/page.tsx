@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { inquiries } from '@/lib/api/inquiries';
+import { api } from '@/lib/api/client';
 import {
   Wine, Calendar, MapPin, Users, Phone, Mail,
   Check, X, Eye, DollarSign, Clock, MessageCircle, Beer,
-  Plus, Send, Loader, Search
+  Plus, Send, Loader, Search, FileText
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -18,6 +20,7 @@ export default function MobileBarPage() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -36,10 +39,12 @@ export default function MobileBarPage() {
   // Fetch mobile bar requests
   const { data, isLoading, error } = useQuery({
     queryKey: ['mobile-bar-requests', statusFilter],
-    queryFn: () => inquiries.getAll({
-      type: 'MOBILE_BAR',
-      status: statusFilter === 'ALL' ? undefined : statusFilter,
-    }),
+    queryFn: () => api.get('/crm/inquiries', { 
+      params: {
+        serviceType: 'MOBILE_BAR',
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+      }
+    }).then(res => res.data),
     retry: 1,
   });
 
@@ -94,6 +99,31 @@ export default function MobileBarPage() {
     },
     onError: () => {
       toast.error('Failed to update status');
+    },
+  });
+
+  // Create quote mutation
+  const createQuoteMutation = useMutation({
+    mutationFn: (id: string) => inquiries.createQuote(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['mobile-bar-requests'] });
+      
+      // Show success message with quote number
+      const quoteNumber = data.data?.quoteNumber || 'Quote';
+      const status = data.data?.status || 'CREATED';
+      toast.success(
+        status === 'EXISTING'
+          ? `Opened existing ${quoteNumber}`
+          : `Created ${quoteNumber} successfully!`
+      );
+      
+      // Redirect to quote edit page
+      if (data.data?.editUrl) {
+        window.location.href = data.data.editUrl;
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to create quote');
     },
   });
 
@@ -381,9 +411,28 @@ export default function MobileBarPage() {
                         <button
                           onClick={() => setSelectedRequest(request)}
                           className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm"
+                          title="View Details"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
+                        {request.quotes && request.quotes.length > 0 ? (
+                          <button
+                            onClick={() => router.push(`/quotes/${request.quotes[0].id}/edit`)}
+                            className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm"
+                            title="View Existing Quote"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => createQuoteMutation.mutate(request.id)}
+                            disabled={createQuoteMutation.isPending}
+                            className="px-3 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 text-sm disabled:opacity-50"
+                            title="Create Quote"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </button>
+                        )}
                         {request.status === 'PENDING' && (
                           <>
                             <button
@@ -392,6 +441,7 @@ export default function MobileBarPage() {
                                 status: 'APPROVED' 
                               })}
                               className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm"
+                              title="Approve"
                             >
                               <Check className="h-4 w-4" />
                             </button>
@@ -401,6 +451,7 @@ export default function MobileBarPage() {
                                 status: 'REJECTED' 
                               })}
                               className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm"
+                              title="Reject"
                             >
                               <X className="h-4 w-4" />
                             </button>

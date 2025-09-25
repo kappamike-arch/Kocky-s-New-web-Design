@@ -13,7 +13,7 @@ import {
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
-export default function FoodTruckPage() {
+export default function CateringPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
@@ -22,7 +22,7 @@ export default function FoodTruckPage() {
 
   // Fetch food truck requests
   const { data, isLoading, error } = useQuery({
-    queryKey: ['food-truck-requests', statusFilter],
+    queryKey: ['catering-requests', statusFilter],
     queryFn: () => api.get('/crm/inquiries', { 
       params: {
         serviceType: 'FOOD_TRUCK',
@@ -37,7 +37,7 @@ export default function FoodTruckPage() {
     mutationFn: ({ id, status, notes }: { id: string; status: string; notes?: string }) =>
       inquiries.updateStatus(id, status, notes),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['food-truck-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['catering-requests'] });
       toast.success('Request status updated');
     },
     onError: () => {
@@ -49,7 +49,7 @@ export default function FoodTruckPage() {
   const createQuoteMutation = useMutation({
     mutationFn: (id: string) => inquiries.createQuote(id),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['food-truck-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['catering-requests'] });
       
       // Show success message with quote number
       const quoteNumber = data.data?.quoteNumber || 'Quote';
@@ -125,7 +125,7 @@ export default function FoodTruckPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Food Truck Requests</h1>
+        <h1 className="text-2xl font-bold mb-2">Catering Requests</h1>
         <p className="text-gray-600">Manage food truck service bookings and events</p>
       </div>
 
@@ -419,7 +419,7 @@ export default function FoodTruckPage() {
             >
               <div className="flex items-center gap-3 mb-4">
                 <Truck className="w-6 h-6 text-orange-500" />
-                <h2 className="text-xl font-bold">Food Truck Request Details</h2>
+                <h2 className="text-xl font-bold">Catering Request Details</h2>
               </div>
               
               <div className="grid grid-cols-2 gap-4 mb-6">

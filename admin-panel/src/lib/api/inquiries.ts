@@ -59,4 +59,10 @@ export const inquiries = {
     const response = await api.get('/crm/dashboard');
     return response.data;
   },
+
+  // Create quote from inquiry (admin)
+  createQuote: async (id: string) => {
+    const response = await api.post(`/crm/inquiries/${id}/create-quote`);
+    return response.data;
+  },
 };

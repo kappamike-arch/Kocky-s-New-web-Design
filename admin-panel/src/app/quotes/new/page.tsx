@@ -1,88 +1,46 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { EnhancedQuoteComposer } from '@/components/quotes/EnhancedQuoteComposer';
+import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import toast from 'react-hot-toast';
-import { quotes } from '@/lib/api/quotes';
-import { inquiries } from '@/lib/api/inquiries';
-import { 
-  Plus, Trash2, Save, Send, FileText, Package, Users, 
-  DollarSign, Calendar, MapPin, ChevronLeft, Copy,
-  Percent, Hash
-} from 'lucide-react';
-import Link from 'next/link';
+import { api } from '@/lib/api/client';
 
-const schema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
-  customerId: z.string().optional(),
-  inquiryId: z.string().optional(),
-  eventDate: z.string().optional(),
-  eventLocation: z.string().optional(),
-  guestCount: z.number().min(1).optional(),
-  items: z.array(z.object({
-    name: z.string().min(1, 'Item name is required'),
-    description: z.string().optional(),
-    category: z.string().optional(),
-    quantity: z.number().min(1, 'Quantity must be at least 1'),
-    unitPrice: z.number().min(0, 'Price must be positive'),
-    isOptional: z.boolean().optional(),
-  })),
-  packages: z.array(z.object({
-    name: z.string().min(1, 'Package name is required'),
-    description: z.string().optional(),
-    price: z.number().min(0, 'Price must be positive'),
-    isOptional: z.boolean().optional(),
-  })).optional(),
-  laborItems: z.array(z.object({
-    description: z.string().min(1, 'Labor description is required'),
-    hours: z.number().min(0, 'Hours must be positive'),
-    rate: z.number().min(0, 'Rate must be positive'),
-    staffName: z.string().optional(),
-    isOptional: z.boolean().optional(),
-  })).optional(),
-  taxRate: z.number().min(0).max(100).optional(),
-  discount: z.number().min(0).optional(),
-  discountType: z.enum(['FIXED', 'PERCENTAGE']).optional(),
-  notes: z.string().optional(),
-  internalNotes: z.string().optional(),
-  termsAndConditions: z.string().optional(),
-  validityDays: z.number().min(1).optional(),
-});
-
-type FormData = z.infer<typeof schema>;
-
-export default function NewQuotePage() {
+function NewQuoteContent() {
   const router = useRouter();
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
-  const [showPreview, setShowPreview] = useState(false);
+  const searchParams = useSearchParams();
+  const [inquiryContext, setInquiryContext] = useState(null);
 
-  const {
-    register,
-    control,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      items: [{ name: '', description: '', quantity: 1, unitPrice: 0 }],
-      packages: [],
-      laborItems: [],
-      taxRate: 8.5,
-      discountType: 'FIXED',
-      validityDays: 30,
-      termsAndConditions: `- 50% deposit required to secure booking
-- Final payment due on day of event
-- Cancellation must be made 7 days in advance for full refund`,
-    },
-  });
+  // Check if we're creating a quote from an inquiry
+  const inquiryId = searchParams.get('inquiryId');
+
+  useEffect(() => {
+    if (inquiryId) {
+      fetchInquiry(inquiryId);
+    }
+  }, [inquiryId]);
+
+  const fetchInquiry = async (id: string) => {
+    try {
+      const response = await api.get(`/crm/inquiries/${id}`);
+      const inquiry = response.data.data || response.data;
+      
+      setInquiryContext({
+        id: inquiry.id,
+        name: inquiry.name || '',
+        email: inquiry.email || '',
+        phone: inquiry.phone || '',
+        companyName: inquiry.companyName || '',
+        serviceType: inquiry.serviceType || '',
+        eventDate: inquiry.eventDate || '',
+        eventLocation: inquiry.eventLocation || '',
+        guestCount: inquiry.guestCount || 0,
+        message: inquiry.message || '',
+      });
+    } catch (error) {
+      console.error('Error fetching inquiry:', error);
+    }
+  };
 
   const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({
     control,
@@ -108,7 +66,7 @@ export default function NewQuotePage() {
   // Fetch recent inquiries for linking
   const { data: recentInquiries } = useQuery({
     queryKey: ['recent-inquiries'],
-    queryFn: () => inquiries.getAll({ limit: 10 }),
+    queryFn: () => api.get('/crm/inquiries', { params: { limit: 10 } }).then(res => res.data),
   });
 
   // Create quote mutation
@@ -178,6 +136,30 @@ export default function NewQuotePage() {
   const taxableAmount = subtotal - discountAmount;
   const taxAmount = (taxableAmount * taxRate) / 100;
   const total = taxableAmount + taxAmount;
+
+  // Load pre-populated data from localStorage (from catering requests)
+  useEffect(() => {
+    const savedData = localStorage.getItem('quoteFormData');
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        if (data.customerName) setValue('title', `${data.serviceType} Quote for ${data.customerName}`);
+        if (data.customerEmail) setValue('customerId', data.customerEmail);
+        if (data.eventDate) setValue('eventDate', data.eventDate);
+        if (data.location) setValue('eventLocation', data.location);
+        if (data.guestCount) setValue('guestCount', parseInt(data.guestCount));
+        if (data.notes) setValue('notes', data.notes);
+        if (data.sourceRequestId) setValue('inquiryId', data.sourceRequestId);
+        
+        toast.success('Pre-populated data loaded from catering request');
+        
+        // Clear the saved data
+        localStorage.removeItem('quoteFormData');
+      } catch (error) {
+        console.error('Error loading pre-populated data:', error);
+      }
+    }
+  }, [setValue]);
 
   const onSubmit = (data: FormData) => {
     createMutation.mutate(data);
@@ -746,5 +728,13 @@ export default function NewQuotePage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function NewQuotePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewQuoteContent />
+    </Suspense>
   );
 }
