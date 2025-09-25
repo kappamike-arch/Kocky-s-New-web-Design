@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api/client';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 // UUID generation utility
 const generateUUID = () => {
@@ -718,7 +718,7 @@ ADDITIONAL TERMS:
       ]);
       
       // Add table
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: 270,
         head: [['Description', 'Qty', 'Unit Price', 'Hours', 'Total']],
         body: tableData,
@@ -735,7 +735,7 @@ ADDITIONAL TERMS:
       });
       
       // Financial Summary
-      const finalY = (doc as any).lastAutoTable.finalY + 20;
+      const finalY = (doc as any).lastAutoTable?.finalY + 20 || 350;
       
       doc.setFontSize(16);
       doc.setTextColor(...primaryColor);
