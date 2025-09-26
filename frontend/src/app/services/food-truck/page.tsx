@@ -17,6 +17,7 @@ import toast from 'react-hot-toast';
 import { unifiedFormsAPI } from '@/lib/api/unified-forms';
 import { HeroSection } from '@/components/sections/HeroSection';
 import { getHeroSettingsAsync, clearHeroSettingsCache } from '@/lib/hero-settings';
+import { InstantQuoteForm } from '@/components/InstantQuoteForm';
 
 export default function FoodTruckPage() {
   const [formData, setFormData] = useState({
@@ -230,6 +231,9 @@ export default function FoodTruckPage() {
         height="medium"
         overlayOpacity={0.4}
       />
+
+      {/* Instant Quote Section */}
+      <InstantQuoteForm serviceType="Food Truck" />
 
       <div className="container mx-auto px-4 py-12">
         {/* Features */}

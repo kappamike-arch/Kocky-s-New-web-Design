@@ -18,6 +18,7 @@ import toast from 'react-hot-toast';
 import { HeroSection } from '@/components/sections/HeroSection';
 import { getHeroSettingsAsync } from '@/lib/hero-settings';
 import { useEffect } from 'react';
+import { InstantQuoteForm } from '@/components/InstantQuoteForm';
 
 export default function MobileBarPage() {
   const [heroData, setHeroData] = useState({
@@ -269,6 +270,9 @@ export default function MobileBarPage() {
         height="large"
         showLogo={!heroData.title}
       />
+
+      {/* Instant Quote Section */}
+      <InstantQuoteForm serviceType="Mobile Bar" />
 
       {/* Features Section */}
       <section className="py-20 px-4 bg-gray-900">
