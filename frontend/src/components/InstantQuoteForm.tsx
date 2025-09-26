@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calculator, RotateCcw, DollarSign } from 'lucide-react';
+import { instantQuotesAPI, InstantQuotePackage } from '@/lib/api/instant-quotes';
 
 interface InstantQuoteFormProps {
   serviceType: 'Mobile Bar' | 'Food Truck';
@@ -23,28 +24,40 @@ interface ValidationErrors {
   hours?: string;
 }
 
-const PACKAGE_RATES = {
-  'Basic': 15,
-  'Premium': 25,
-  'VIP': 40,
-};
-
-const PACKAGE_OPTIONS = [
-  { value: 'Basic', label: 'Basic' },
-  { value: 'Premium', label: 'Premium' },
-  { value: 'VIP', label: 'VIP' },
-];
-
 export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
+  const [packages, setPackages] = useState<InstantQuotePackage[]>([]);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState<FormData>({
     guests: 0,
-    package: 'Basic',
+    package: '',
     hours: 0,
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [quote, setQuote] = useState<number | null>(null);
   const [isCalculated, setIsCalculated] = useState(false);
+
+  // Load packages from API
+  useEffect(() => {
+    const loadPackages = async () => {
+      try {
+        const serviceKey = serviceType === 'Mobile Bar' ? 'mobile-bar' : 'food-truck';
+        const fetchedPackages = await instantQuotesAPI.getPackages(serviceKey);
+        setPackages(fetchedPackages);
+        
+        // Set default package if available
+        if (fetchedPackages.length > 0) {
+          setFormData(prev => ({ ...prev, package: fetchedPackages[0].id }));
+        }
+      } catch (error) {
+        console.error('Failed to load packages:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPackages();
+  }, [serviceType]);
 
   const validateForm = (): boolean => {
     const newErrors: ValidationErrors = {};
@@ -66,8 +79,12 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
       return;
     }
 
-    const packageRate = PACKAGE_RATES[formData.package as keyof typeof PACKAGE_RATES];
-    const total = formData.guests * formData.hours * packageRate;
+    const selectedPackage = packages.find(pkg => pkg.id === formData.package);
+    if (!selectedPackage) {
+      return;
+    }
+
+    const total = formData.guests * formData.hours * selectedPackage.rate;
     
     setQuote(total);
     setIsCalculated(true);
@@ -76,7 +93,7 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
   const handleReset = () => {
     setFormData({
       guests: 0,
-      package: 'Basic',
+      package: packages.length > 0 ? packages[0].id : '',
       hours: 0,
     });
     setErrors({});
@@ -148,12 +165,19 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
                   value={formData.package}
                   onChange={(e) => handleInputChange('package', e.target.value)}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:border-red-600 focus:outline-none"
+                  disabled={loading}
                 >
-                  {PACKAGE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label} - ${PACKAGE_RATES[option.value as keyof typeof PACKAGE_RATES]}/guest/hour
-                    </option>
-                  ))}
+                  {loading ? (
+                    <option>Loading packages...</option>
+                  ) : packages.length === 0 ? (
+                    <option>No packages available</option>
+                  ) : (
+                    packages.map((pkg) => (
+                      <option key={pkg.id} value={pkg.id}>
+                        {pkg.name} - ${pkg.rate}/guest/hour
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -183,7 +207,7 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
                 </Label>
                 <div className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white">
                   <span className="text-red-500 font-bold">
-                    ${PACKAGE_RATES[formData.package as keyof typeof PACKAGE_RATES]}
+                    ${packages.find(pkg => pkg.id === formData.package)?.rate || 0}
                   </span>
                 </div>
               </div>
@@ -229,7 +253,7 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
                     This is an estimate and subject to change depending on final details.
                   </p>
                   <div className="mt-4 text-xs text-red-200">
-                    <p>Calculation: {formData.guests} guests × {formData.hours} hours × ${PACKAGE_RATES[formData.package as keyof typeof PACKAGE_RATES]}/guest/hour</p>
+                    <p>Calculation: {formData.guests} guests × {formData.hours} hours × ${packages.find(pkg => pkg.id === formData.package)?.rate || 0}/guest/hour</p>
                   </div>
                 </div>
               </motion.div>

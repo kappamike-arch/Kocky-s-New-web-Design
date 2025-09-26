@@ -60,7 +60,9 @@ export default function ServiceSettingsPage() {
       duration: 'Hours',
       guests: 'Guests',
       features: ['Feature 1'],
-      popular: false
+      popular: false,
+      instantQuoteRate: 0,
+      instantQuoteEnabled: false
     };
     
     setSettings({
@@ -312,6 +314,19 @@ export default function ServiceSettingsPage() {
                           className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
                         />
                       </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Instant Quote Rate ($/guest/hour)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={pkg.instantQuoteRate || ''}
+                          onChange={(e) => updatePackageField(pkgIndex, 'instantQuoteRate', parseFloat(e.target.value) || 0)}
+                          disabled={!isEditing}
+                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
+                          placeholder="0.00"
+                        />
+                      </div>
                     </div>
                     {isEditing && (
                       <button
@@ -323,8 +338,8 @@ export default function ServiceSettingsPage() {
                     )}
                   </div>
 
-                  {/* Popular Badge */}
-                  <div className="mb-3">
+                  {/* Package Options */}
+                  <div className="mb-3 space-y-2">
                     <label className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -334,6 +349,16 @@ export default function ServiceSettingsPage() {
                         className="rounded"
                       />
                       <span className="text-sm text-gray-700">Mark as Popular</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={pkg.instantQuoteEnabled || false}
+                        onChange={(e) => updatePackageField(pkgIndex, 'instantQuoteEnabled', e.target.checked)}
+                        disabled={!isEditing}
+                        className="rounded"
+                      />
+                      <span className="text-sm text-gray-700">Available in Instant Quote</span>
                     </label>
                   </div>
 
