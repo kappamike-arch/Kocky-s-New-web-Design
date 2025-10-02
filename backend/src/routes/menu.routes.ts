@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as menuController from '../controllers/menu.controller';
 import { authenticate, authorize } from '../middleware/auth';
 import { UserRole } from '@prisma/client';
+import { uploadMenu } from '../middleware/upload';
 
 const router = Router();
 
@@ -10,7 +11,6 @@ router.get('/', menuController.getAllMenuItems);
 router.get('/categories', menuController.getCategories);
 router.get('/featured', menuController.getFeaturedItems);
 router.get('/happy-hour', menuController.getHappyHourSpecials);
-router.get('/brunch', menuController.getBrunchItems);
 router.get('/:id', menuController.getMenuItem);
 
 // Protected routes - Admin/Staff
@@ -18,6 +18,7 @@ router.post(
   '/',
   authenticate,
   authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  uploadMenu.single('image'),
   menuController.createMenuItem
 );
 
@@ -25,6 +26,7 @@ router.put(
   '/:id',
   authenticate,
   authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  uploadMenu.single('image'),
   menuController.updateMenuItem
 );
 

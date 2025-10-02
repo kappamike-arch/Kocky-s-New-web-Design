@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../server';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import { sendEmail } from '../utils/email';
 import { v4 as uuidv4 } from 'uuid';

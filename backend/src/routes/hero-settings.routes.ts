@@ -16,8 +16,8 @@ const router = Router();
 
 // Ensure upload directories exist
 const uploadDir = path.join(__dirname, '../../uploads');
+const logosDir = path.join(uploadDir, 'logos');
 // Use absolute paths to public_html/uploads for web-served files
-const logosDir = '/home/stagingkockys/public_html/uploads/logos';
 const videosDir = '/home/stagingkockys/public_html/uploads/videos';
 const imagesDir = '/home/stagingkockys/public_html/uploads/images';
 
@@ -135,13 +135,6 @@ const uploadVideo = multer({
 // Public route for getting hero settings (used by frontend)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    // Set cache control headers to prevent caching
-    res.set({
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    });
-
     const settings = await getAllHeroSettings();
     res.json({
       success: true,
@@ -158,13 +151,6 @@ router.get('/', async (req: Request, res: Response) => {
 // Public route for getting hero settings for a specific page (used by frontend)
 router.get('/:pageId', async (req: Request, res: Response) => {
   try {
-    // Set cache control headers to prevent caching
-    res.set({
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    });
-
     const { pageId } = req.params;
     const settings = await getHeroSettings(pageId);
     
@@ -400,109 +386,7 @@ router.delete('/:pageId/video', async (req: Request, res: Response) => {
   }
 });
 
-// Update media preference for a specific page (before auth middleware for testing)
-router.put('/:pageId/media-preference', async (req: Request, res: Response) => {
-  try {
-    const { pageId } = req.params;
-    const { mediaPreference } = req.body;
-    
-    if (!mediaPreference || !['image', 'video', 'auto'].includes(mediaPreference)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid media preference. Must be "image", "video", or "auto"'
-      });
-    }
-    
-    console.log(`[Media Preference] Updating preference for ${pageId} to:`, mediaPreference);
-    
-    // Update the hero settings with the new media preference
-    const updatedSettings = await updateHeroSettings(pageId, { mediaPreference });
-    
-    if (!updatedSettings) {
-      return res.status(404).json({
-        success: false,
-        message: `Settings not found for page: ${pageId}`
-      });
-    }
-    
-    console.log(`[Media Preference] Successfully updated preference for ${pageId}:`, mediaPreference);
-    
-    res.json({
-      success: true,
-      data: updatedSettings,
-      message: 'Media preference updated successfully'
-    });
-  } catch (error: any) {
-    console.error(`[Media Preference] Error for ${req.params.pageId}:`, error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to update media preference'
-    });
-  }
-});
-
-// Update hero settings for a specific page (before auth middleware for testing)
-router.put('/:pageId', async (req: Request, res: Response) => {
-  try {
-    const { pageId } = req.params;
-    const updatedSettings = await updateHeroSettings(pageId, req.body);
-    
-    if (!updatedSettings) {
-      return res.status(404).json({
-        success: false,
-        message: `Settings not found for page: ${pageId}`
-      });
-    }
-    
-    res.json({
-      success: true,
-      data: updatedSettings,
-      message: 'Settings updated successfully'
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to update hero settings'
-    });
-  }
-});
-
-// Authentication disabled for testing
-// router.use(authenticate);
-// router.use(authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN));
-
-// Save all hero settings at once (batch update)
-router.post('/batch', async (req: Request, res: Response) => {
-  try {
-    const { settings } = req.body;
-    
-    if (!settings || !Array.isArray(settings)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid settings data. Expected an array of settings.'
-      });
-    }
-    
-    console.log(`[Batch Save] Saving ${settings.length} hero settings...`);
-    
-    await saveAllHeroSettings(settings);
-    
-    res.json({
-      success: true,
-      message: `Successfully saved ${settings.length} page settings`
-    });
-  } catch (error: any) {
-    console.error('[Batch Save] Error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to save all hero settings'
-    });
-  }
-});
-
-// Update hero settings for a specific page (moved above auth middleware)
-
-// Upload logo for a specific page
+// Upload logo for a specific page (before auth middleware for testing)
 router.post('/:pageId/upload-logo', (req: Request, res: Response, next: any) => {
   upload.single('logo')(req, res, (err: any) => {
     if (err) {
@@ -589,6 +473,65 @@ router.post('/:pageId/upload-logo', (req: Request, res: Response, next: any) => 
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to upload logo'
+    });
+  }
+});
+
+// Protected routes - require authentication
+router.use(authenticate);
+router.use(authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN));
+
+// Save all hero settings at once (batch update)
+router.post('/batch', async (req: Request, res: Response) => {
+  try {
+    const { settings } = req.body;
+    
+    if (!settings || !Array.isArray(settings)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid settings data. Expected an array of settings.'
+      });
+    }
+    
+    console.log(`[Batch Save] Saving ${settings.length} hero settings...`);
+    
+    await saveAllHeroSettings(settings);
+    
+    res.json({
+      success: true,
+      message: `Successfully saved ${settings.length} page settings`
+    });
+  } catch (error: any) {
+    console.error('[Batch Save] Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to save all hero settings'
+    });
+  }
+});
+
+// Update hero settings for a specific page
+router.put('/:pageId', async (req: Request, res: Response) => {
+  try {
+    const { pageId } = req.params;
+    const updatedSettings = await updateHeroSettings(pageId, req.body);
+    
+    if (!updatedSettings) {
+      return res.status(404).json({
+        success: false,
+        message: `Settings not found for page: ${pageId}`
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: updatedSettings,
+      message: 'Settings updated successfully'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update hero settings'
     });
   }
 });

@@ -25,7 +25,4 @@ router.post('/inquiries/:id/quotes', crmController.createQuote);
 router.put('/quotes/:quoteId', crmController.updateQuote);
 router.post('/quotes/:quoteId/send', crmController.sendQuoteEmail);
 
-// Email accounts
-router.get('/email-accounts', crmController.getEmailAccountsList);
-
 export default router;

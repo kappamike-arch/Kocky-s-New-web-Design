@@ -16,8 +16,8 @@ async function debugQuoteEmailDelivery() {
   console.log('=============================');
   console.log('');
 
-  const quoteId = "cmfvzmv040024bcmhp9yvuyor";
-  const testEmail = "kappamike@gmail.com";
+  const quoteId = "cmfyz80sn000abcevxsovwbte";
+  const testEmail = "lparker@school.edu";
   
   console.log(`📋 Quote ID: ${quoteId}`);
   console.log(`📧 Test Email: ${testEmail}`);
@@ -44,7 +44,8 @@ async function debugQuoteEmailDelivery() {
     console.log('📋 Step 2: Checking quote exists...');
     try {
       const quoteResponse = await axios.get(`http://localhost:5001/api/quotes/${quoteId}`, { timeout: 10000 });
-      const quote = quoteResponse.data;
+      const response = quoteResponse.data;
+      const quote = response.quote || response; // Handle both response formats
       
       console.log('✅ Quote found');
       console.log(`   Quote Number: ${quote.quoteNumber}`);
@@ -179,4 +180,6 @@ async function debugQuoteEmailDelivery() {
 }
 
 debugQuoteEmailDelivery().catch(console.error);
+
+
 

@@ -1,6 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
+import { UPLOADS_URL } from '@/lib/config';
+import { normalizeImageUrl } from '@/lib/images/url';
 
 // Menu Item Interface
 interface MenuItem {
@@ -10,74 +13,20 @@ interface MenuItem {
   price: number | string;
   category: string;
   image?: string;
+  imageUrl?: string;
   featured?: boolean;
-  rating?: number;
-  dietaryInfo?: string[];
+  available?: boolean;
+  tags?: string[];
+  allergens?: string[];
 }
 
-// Static menu data - no external dependencies
-const MENU_ITEMS: MenuItem[] = [
-  {
-    id: 'app1',
-    name: 'Loaded Potato Skins',
-    description: 'Crispy potato skins topped with bacon, cheese, and sour cream',
-    price: 9.99,
-    category: 'appetizers',
-    image: 'https://staging.kockys.com/uploads/gallery/gallery-1757005147531-560817189.jpg',
-    featured: true,
-    rating: 4.6,
-  },
-  {
-    id: 'app2',
-    name: 'Spinach Artichoke Dip',
-    description: 'Creamy blend served with tortilla chips',
-    price: 8.99,
-    category: 'appetizers',
-    image: 'https://staging.kockys.com/uploads/gallery/gallery-1757007192434-466496930.jpg',
-    dietaryInfo: ['Vegetarian'],
-    rating: 4.5,
-  },
-  {
-    id: 'ent1',
-    name: "Kocky's Signature Burger",
-    description: 'Double patty with special sauce, lettuce, cheese, pickles on a sesame seed bun',
-    price: 14.99,
-    category: 'entrees',
-    image: 'https://staging.kockys.com/uploads/gallery/gallery-1757009264753-353858963.jpg',
-    featured: true,
-    rating: 4.9,
-  },
-  {
-    id: 'ent2',
-    name: 'Grilled Salmon',
-    description: 'Fresh Atlantic salmon with lemon butter sauce, served with vegetables',
-    price: 22.99,
-    category: 'entrees',
-    image: 'https://staging.kockys.com/uploads/gallery/gallery-1757029981874-936868913.png',
-    dietaryInfo: ['Gluten-Free'],
-    rating: 4.7,
-  },
-  {
-    id: 'drk1',
-    name: 'Craft Beer Flight',
-    description: 'Sample four of our rotating craft beers',
-    price: 12,
-    category: 'drinks',
-    image: 'https://staging.kockys.com/uploads/gallery/gallery-1757005147531-560817189.jpg',
-    rating: 4.6,
-  },
-  {
-    id: 'drk2',
-    name: 'Classic Margarita',
-    description: 'Tequila, triple sec, fresh lime juice',
-    price: 9,
-    category: 'drinks',
-    image: 'https://staging.kockys.com/uploads/gallery/gallery-1757007192434-466496930.jpg',
-    featured: true,
-  },
-];
+// API Response Interface
+interface MenuResponse {
+  success: boolean;
+  data: MenuItem[];
+}
 
-// Simple Menu Item Card Component using regular img tag
+// Menu Item Card Component
 function MenuItemCard({ item }: { item: MenuItem }) {
   // Validate item data
   if (!item || !item.id || !item.name) {
@@ -88,9 +37,13 @@ function MenuItemCard({ item }: { item: MenuItem }) {
     );
   }
 
-  const price = typeof item.price === 'number' 
-    ? `$${item.price.toFixed(2)}` 
-    : String(item.price || 'N/A');
+  const numericPrice = typeof item.price === 'number' ? item.price : parseFloat(item.price ?? '');
+  const price = Number.isFinite(numericPrice)
+    ? `$${numericPrice.toFixed(2)}`
+    : String(item.price ?? 'N/A');
+
+  // Use normalized image URL
+  const imageUrl = normalizeImageUrl(item.imageUrl || item.image);
 
   return (
     <div className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-200">
@@ -101,15 +54,22 @@ function MenuItemCard({ item }: { item: MenuItem }) {
         </div>
       )}
 
-      {/* Image using regular img tag */}
+      {/* Unavailable Badge */}
+      {item.available === false && (
+        <div className="absolute top-2 right-2 z-10 bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+          Unavailable
+        </div>
+      )}
+
+      {/* Image */}
       <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
-        {item.image ? (
+        {imageUrl ? (
           <img
-            src={item.image}
+            src={imageUrl}
             alt={item.name}
             className="w-full h-full object-cover"
             onError={(e) => {
-              console.log('Image failed to load:', item.image);
+              console.log('Image failed to load:', imageUrl);
               e.currentTarget.style.display = 'none';
             }}
           />
@@ -138,27 +98,31 @@ function MenuItemCard({ item }: { item: MenuItem }) {
           </p>
         )}
 
-        {/* Dietary Info */}
-        {item.dietaryInfo && Array.isArray(item.dietaryInfo) && item.dietaryInfo.length > 0 && (
+        {/* Tags */}
+        {item.tags && Array.isArray(item.tags) && item.tags.length > 0 && (
           <div className="flex gap-1 mb-2 flex-wrap">
-            {item.dietaryInfo.map((info, index) => (
+            {item.tags.map((tag, index) => (
               <span
-                key={`${item.id}-diet-${index}`}
-                className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full"
+                key={`${item.id}-tag-${index}`}
+                className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full"
               >
-                {info}
+                {tag}
               </span>
             ))}
           </div>
         )}
 
-        {/* Rating */}
-        {item.rating && typeof item.rating === 'number' && (
-          <div className="flex items-center gap-1">
-            <span className="text-yellow-400">⭐</span>
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {item.rating.toFixed(1)}
-            </span>
+        {/* Allergens */}
+        {item.allergens && Array.isArray(item.allergens) && item.allergens.length > 0 && (
+          <div className="flex gap-1 mb-2 flex-wrap">
+            {item.allergens.map((allergen, index) => (
+              <span
+                key={`${item.id}-allergen-${index}`}
+                className="text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full"
+              >
+                {allergen}
+              </span>
+            ))}
           </div>
         )}
       </div>
@@ -200,13 +164,168 @@ function MenuSection({ title, items, description }: {
   );
 }
 
-// Main Menu Page Component - Ultra simple, no hooks, no state, no hydration issues
+// Loading Component
+function LoadingSpinner() {
+  return (
+    <div className="flex justify-center items-center py-16">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+    </div>
+  );
+}
+
+// Error Component
+function ErrorMessage({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="text-center py-16">
+      <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+        <p className="text-red-600 mb-4">{message}</p>
+        <button 
+          onClick={onRetry}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Empty State Component
+function EmptyState() {
+  return (
+    <div className="text-center py-16">
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-12 max-w-md mx-auto">
+        <div className="text-6xl mb-4">🍽️</div>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          No Menu Items Found
+        </h3>
+        <p className="text-gray-600 dark:text-gray-400">
+          Our menu is being updated. Please check back soon!
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Main Menu Page Component
 export default function MenuPage() {
-  // Filter menu items safely - done at render time, no state
-  const featuredItems = MENU_ITEMS.filter(item => item && item.featured === true);
-  const appetizers = MENU_ITEMS.filter(item => item && item.category === 'appetizers');
-  const entrees = MENU_ITEMS.filter(item => item && item.category === 'entrees');
-  const drinks = MENU_ITEMS.filter(item => item && item.category === 'drinks');
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch menu items from API
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data } = await api.get<MenuResponse>('/menu');
+
+      if (data?.success && Array.isArray(data.data)) {
+        const normalisedItems = data.data
+          .filter((item): item is MenuItem => Boolean(item && item.id && item.name))
+          .map((item) => ({
+            ...item,
+            price: typeof item.price === 'number' ? item.price : parseFloat(item.price ?? '0') || item.price,
+            imageUrl: item.imageUrl || item.image,
+          }));
+
+        setMenuItems(normalisedItems);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (err: any) {
+      console.error('Error fetching menu items:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to load menu items');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
+
+  // Filter menu items by category and availability
+  const availableItems = menuItems.filter(item => item.available !== false);
+  const featuredItems = availableItems.filter(item => item.featured === true);
+  
+  // Group items by category
+  const itemsByCategory = availableItems.reduce((acc, item) => {
+    const category = item.category || 'Other';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(item);
+    return acc;
+  }, {} as Record<string, MenuItem[]>);
+
+  // Category display names and order
+  const categoryConfig = {
+    'APPETIZER': { name: 'Appetizers', order: 1 },
+    'ENTREE': { name: 'Entrées', order: 2 },
+    'DESSERT': { name: 'Desserts', order: 3 },
+    'DRINK': { name: 'Drinks', order: 4 },
+    'BEER': { name: 'Beer', order: 5 },
+    'WINE': { name: 'Wine', order: 6 },
+    'COCKTAIL': { name: 'Cocktails', order: 7 },
+  };
+
+  // Sort categories by order
+  const sortedCategories = Object.keys(itemsByCategory).sort((a, b) => {
+    const orderA = categoryConfig[a as keyof typeof categoryConfig]?.order || 999;
+    const orderB = categoryConfig[b as keyof typeof categoryConfig]?.order || 999;
+    return orderA - orderB;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Hero Section */}
+        <div className="bg-gray-900 text-white py-20">
+          <div className="max-w-7xl mx-auto px-4 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Menu</h1>
+            <p className="text-xl mb-2">Discover Our Delicious Menu</p>
+            <p className="text-gray-300">From appetizers to desserts, we have something for everyone</p>
+          </div>
+        </div>
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Hero Section */}
+        <div className="bg-gray-900 text-white py-20">
+          <div className="max-w-7xl mx-auto px-4 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Menu</h1>
+            <p className="text-xl mb-2">Discover Our Delicious Menu</p>
+            <p className="text-gray-300">From appetizers to desserts, we have something for everyone</p>
+          </div>
+        </div>
+        <ErrorMessage message={error} onRetry={fetchMenuItems} />
+      </div>
+    );
+  }
+
+  if (menuItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Hero Section */}
+        <div className="bg-gray-900 text-white py-20">
+          <div className="max-w-7xl mx-auto px-4 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Menu</h1>
+            <p className="text-xl mb-2">Discover Our Delicious Menu</p>
+            <p className="text-gray-300">From appetizers to desserts, we have something for everyone</p>
+          </div>
+        </div>
+        <EmptyState />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -220,29 +339,27 @@ export default function MenuPage() {
       </div>
 
       {/* Featured Items */}
-      <MenuSection 
-        title="Chef's Recommendations" 
-        items={featuredItems}
-        description="Our most popular and highly rated dishes"
-      />
+      {featuredItems.length > 0 && (
+        <MenuSection 
+          title="Chef's Recommendations" 
+          items={featuredItems}
+          description="Our most popular and highly rated dishes"
+        />
+      )}
 
-      {/* Appetizers */}
-      <MenuSection 
-        title="Appetizers" 
-        items={appetizers}
-      />
-
-      {/* Entrees */}
-      <MenuSection 
-        title="Entrées" 
-        items={entrees}
-      />
-
-      {/* Drinks */}
-      <MenuSection 
-        title="Drinks" 
-        items={drinks}
-      />
+      {/* Menu Categories */}
+      {sortedCategories.map((category) => {
+        const categoryName = categoryConfig[category as keyof typeof categoryConfig]?.name || category;
+        const items = itemsByCategory[category];
+        
+        return (
+          <MenuSection 
+            key={category}
+            title={categoryName} 
+            items={items}
+          />
+        );
+      })}
     </div>
   );
 }

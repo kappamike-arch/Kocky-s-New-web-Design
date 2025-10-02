@@ -1,4 +1,78 @@
 {
-  "title": "Kockys on Wheels",
-  "updatedAt": "2025-09-05T18:48:08.562Z"
+  "id": "food-truck",
+  "serviceName": "Food Truck",
+  "title": "Kocky&#x27;s on Wheels",
+  "subtitle": "Bringing Great Food to Your Event",
+  "description": "Experience the best of Kocky&#x27;s Bar &amp; Grill wherever you are. Our fully equipped food truck brings our signature dishes right to your event.",
+  "packages": [
+    {
+      "id": "basic",
+      "name": "Basic Package",
+      "price": "Starting at $500",
+      "duration": "2 hours",
+      "guests": "Up to 50 guests",
+      "features": [
+        "Limited menu",
+        "Basic setup",
+        "Paper products included"
+      ],
+      "instantQuoteRate": 18,
+      "instantQuoteEnabled": true
+    },
+    {
+      "id": "standard",
+      "name": "Standard Package",
+      "price": "Starting at $1,000",
+      "duration": "3 hours",
+      "guests": "50-100 guests",
+      "features": [
+        "Full menu",
+        "Professional setup",
+        "Premium disposables",
+        "Beverage service"
+      ],
+      "popular": true,
+      "instantQuoteRate": 25,
+      "instantQuoteEnabled": true
+    },
+    {
+      "id": "premium",
+      "name": "Premium Package",
+      "price": "Starting at $2,000",
+      "duration": "4+ hours",
+      "guests": "100+ guests",
+      "features": [
+        "Custom menu",
+        "Full service team",
+        "Premium setup",
+        "Dessert included"
+      ],
+      "instantQuoteRate": 40,
+      "instantQuoteEnabled": true
+    }
+  ],
+  "features": [
+    {
+      "icon": "Truck",
+      "title": "Fully Equipped Kitchen",
+      "description": "Professional grade cooking equipment on wheels"
+    },
+    {
+      "icon": "Users",
+      "title": "Experienced Staff",
+      "description": "Professional chefs and service team"
+    },
+    {
+      "icon": "Clock",
+      "title": "Flexible Hours",
+      "description": "Available for lunch, dinner, or late night"
+    },
+    {
+      "icon": "Star",
+      "title": "Custom Menu",
+      "description": "Tailored to your event needs"
+    }
+  ],
+  "isActive": true,
+  "updatedAt": "2025-09-26T17:22:15.742Z"
 }

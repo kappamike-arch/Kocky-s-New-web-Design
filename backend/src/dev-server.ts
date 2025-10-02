@@ -61,7 +61,7 @@ const upload = multer({
 
 // Middleware
 app.use(cors({
-  origin: ['http://staging.kockys.com', 'http://staging.kockys.com:3003', 'http://staging.kockys.com/admin', 'http://staging.kockys.com:4001', 'https://staging.kockys.com', 'https://staging.kockys.com/admin', 'https://api.staging.kockys.com'],
+  origin: ['http://localhost:3000', 'http://72.167.227.205:3003/', 'http://localhost:4000', 'http://localhost:4001', 'https://staging.kockys.com', 'https://staging.kockys.com/admin', 'https://api.staging.kockys.com'],
   credentials: true
 }));
 app.use(bodyParser.json({ limit: '10mb' })); // Increase limit for base64 images
@@ -587,7 +587,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Development server is running at http://staging.kockys.com:${PORT}`);
+  console.log(`🚀 Development server is running at http://localhost:${PORT}`);
   console.log('📝 This is a simple in-memory server for development purposes');
   console.log('🔄 All data will be lost on restart');
   console.log('\nAvailable endpoints:');

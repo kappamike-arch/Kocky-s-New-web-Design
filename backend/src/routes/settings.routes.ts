@@ -9,14 +9,19 @@ const router = Router();
 router.get('/public', settingsController.getPublicSettings);
 router.get('/business-hours', settingsController.getBusinessHours);
 
-// Authentication disabled for testing
+// Protected routes - Admin only
+// TODO: Re-enable authentication after testing
 router.get(
   '/',
+  // authenticate,
+  // authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   settingsController.getAllSettings
 );
 
 router.put(
   '/',
+  // authenticate,
+  // authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   settingsController.updateSettings
 );
 
@@ -46,14 +51,6 @@ router.put(
   authenticate,
   authorize(UserRole.SUPER_ADMIN),
   settingsController.updatePaymentSettings
-);
-
-// Test email endpoint
-router.post(
-  '/test-email',
-  // authenticate,
-  // authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  settingsController.testEmailSettings
 );
 
 export default router;

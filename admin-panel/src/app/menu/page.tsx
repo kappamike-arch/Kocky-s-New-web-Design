@@ -1,39 +1,51 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { UPLOADS_URL } from '@/lib/config';
+import { MEDIA_BASE_URL, UPLOADS_URL, UPLOADS_PREFIX } from '@/lib/config';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { menu } from '@/lib/api/menu';
 import {
-  Plus, Edit, Trash2, Image, Star, DollarSign, Clock,
-  Search, Filter, Upload, X, Check, AlertCircle, Coffee
+  Plus, Edit, Trash2, Star, Clock,
+  Search, Upload, Check, Coffee
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const PLACEHOLDER_IMAGE = '/admin/placeholder-menu.svg';
+
+interface MenuItemForm {
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  imageUrl: string;
+  tags: string[];
+  allergens: string[];
+  available: boolean;
+  featured: boolean;
+  preparationTime: number;
+  image: File | null;
+}
 
 export default function MenuManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<MenuItemForm>({
     name: '',
     description: '',
-    category: 'Food',
-    subcategory: '',
+    category: 'APPETIZER',
     price: 0,
     imageUrl: '',
-    ingredients: [] as string[],
-    allergens: [] as string[],
-    dietaryRestrictions: [] as string[],
-    spiceLevel: 0,
-    isAvailable: true,
-    isFeatured: false,
-    isSpecial: false,
-    specialPrice: 0,
+    tags: [],
+    allergens: [],
+    available: true,
+    featured: false,
     preparationTime: 15,
-    calories: 0,
+    image: null,
   });
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -105,72 +117,83 @@ export default function MenuManagementPage() {
   });
 
   const resetForm = () => {
+    setUploadedFile(null);
     setFormData({
       name: '',
       description: '',
-      category: 'Food',
-      subcategory: '',
+      category: 'APPETIZER',
       price: 0,
       imageUrl: '',
-      ingredients: [],
+      tags: [],
       allergens: [],
-      dietaryRestrictions: [],
-      spiceLevel: 0,
-      isAvailable: true,
-      isFeatured: false,
-      isSpecial: false,
-      specialPrice: 0,
+      available: true,
+      featured: false,
       preparationTime: 15,
-      calories: 0,
+      image: null,
     });
   };
 
   const handleEdit = (item: any) => {
     setEditingItem(item);
+    setUploadedFile(null);
+    const currentImage = item.imageUrl || item.image || '';
     setFormData({
       name: item.name || '',
       description: item.description || '',
-      category: item.category || 'Food',
-      subcategory: item.subcategory || '',
-      price: item.price || 0,
-      imageUrl: item.imageUrl || '',
-      ingredients: item.ingredients || [],
+      category: item.category || 'APPETIZER',
+      price: typeof item.price === 'number' ? item.price : parseFloat(item.price || '0') || 0,
+      imageUrl: currentImage,
+      tags: item.tags || [],
       allergens: item.allergens || [],
-      dietaryRestrictions: item.dietaryRestrictions || [],
-      spiceLevel: item.spiceLevel || 0,
-      isAvailable: item.isAvailable !== undefined ? item.isAvailable : true,
-      isFeatured: item.isFeatured || false,
-      isSpecial: item.isSpecial || false,
-      specialPrice: item.specialPrice || 0,
-      preparationTime: item.preparationTime || 15,
-      calories: item.calories || 0,
+      available: item.available !== undefined ? item.available : true,
+      featured: item.featured || false,
+      preparationTime: item.preparationTime || item.prepTime || 15,
+      image: null,
     });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingItem) {
-      updateMutation.mutate({ id: editingItem.id, data: formData });
+
+    const payload: Record<string, any> = {
+      name: formData.name,
+      description: formData.description,
+      category: formData.category,
+      price: formData.price,
+      preparationTime: formData.preparationTime,
+      available: formData.available,
+      featured: formData.featured,
+      tags: formData.tags,
+      allergens: formData.allergens,
+    };
+
+    if (uploadedFile) {
+      payload.image = uploadedFile;
+    } else if (formData.imageUrl && !formData.imageUrl.startsWith('blob:')) {
+      payload.imageUrl = formData.imageUrl;
     } else {
-      createMutation.mutate(formData);
+      payload.imageUrl = null;
+    }
+
+    if (editingItem) {
+      updateMutation.mutate({ id: editingItem.id, data: payload });
+    } else {
+      createMutation.mutate(payload);
     }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Store the file for upload
-      setFormData({ ...formData, image: file } as any);
-      
-      // Create preview URL
+      setUploadedFile(file);
       const previewUrl = URL.createObjectURL(file);
-      setFormData(prev => ({ ...prev, imageUrl: previewUrl } as any));
-      
+      setFormData(prev => ({ ...prev, imageUrl: previewUrl, image: file }));
       toast.success('Image selected');
     }
   };
 
-  const filteredItems = data?.data?.filter((item: any) =>
+  const items = Array.isArray(data?.items) ? data?.items : (Array.isArray(data?.data) ? data?.data : []);
+  const filteredItems = items.filter((item: any) =>
     item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.description?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
@@ -184,7 +207,16 @@ export default function MenuManagementPage() {
     return acc;
   }, {});
 
-  const categories = ['Food', 'Drinks', 'Happy Hour', 'Specials'];
+  const categories = ['APPETIZER', 'ENTREE', 'DESSERT', 'DRINK', 'BEER', 'WINE', 'COCKTAIL'];
+
+  const resolveImageSrc = (item: any) => {
+    const url = item.imageUrl || item.image;
+    if (!url) return PLACEHOLDER_IMAGE;
+    if (url.startsWith('blob:')) return url;
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads')) return `${MEDIA_BASE_URL}${url}`;
+    return `${MEDIA_BASE_URL}${UPLOADS_PREFIX}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
 
   // Mock data if API not available
   const mockItems = [
@@ -192,36 +224,40 @@ export default function MenuManagementPage() {
       id: '1',
       name: 'Classic Burger',
       description: 'Juicy beef patty with lettuce, tomato, and special sauce',
-      category: 'Food',
+      category: 'APPETIZER',
       price: 12.99,
-      imageUrl: '/api/placeholder/200/150',
-      isAvailable: true,
-      isFeatured: true,
-      ingredients: ['Beef', 'Lettuce', 'Tomato', 'Cheese'],
+      image: '/api/placeholder/200/150',
+      available: true,
+      featured: true,
+      tags: ['Beef', 'Lettuce', 'Tomato', 'Cheese'],
       allergens: ['Gluten', 'Dairy'],
-      spiceLevel: 0,
+      preparationTime: 15,
     },
     {
       id: '2',
       name: 'Craft Beer',
       description: 'Local brewery selection',
-      category: 'Drinks',
+      category: 'BEER',
       price: 6.50,
-      imageUrl: '/api/placeholder/200/150',
-      isAvailable: true,
-      isFeatured: false,
+      image: '/api/placeholder/200/150',
+      available: true,
+      featured: false,
+      tags: [],
+      allergens: [],
+      preparationTime: 5,
     },
     {
       id: '3',
       name: 'Happy Hour Wings',
       description: 'Spicy buffalo wings with ranch',
-      category: 'Happy Hour',
+      category: 'APPETIZER',
       price: 8.99,
-      specialPrice: 5.99,
-      imageUrl: '/api/placeholder/200/150',
-      isAvailable: true,
-      isSpecial: true,
-      spiceLevel: 3,
+      image: '/api/placeholder/200/150',
+      available: true,
+      featured: true,
+      tags: ['Spicy', 'Wings'],
+      allergens: ['Dairy'],
+      preparationTime: 20,
     },
   ];
 
@@ -317,36 +353,23 @@ export default function MenuManagementPage() {
                     >
                       {/* Image */}
                       <div className="relative h-48 bg-gray-100">
-                        {item.imageUrl ? (
-                          <img
-                            src={item.imageUrl.startsWith('http') || item.imageUrl.startsWith('/uploads') 
-                              ? `${UPLOADS_URL}${item.imageUrl}` 
-                              : item.imageUrl}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/api/placeholder/200/150';
-                            }}
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <Image className="w-12 h-12 text-gray-400" />
-                          </div>
-                        )}
+                        <img
+                          src={resolveImageSrc(item)}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+                          }}
+                        />
                         
                         {/* Badges */}
                         <div className="absolute top-2 right-2 flex gap-2">
-                          {item.isFeatured && (
+                          {item.featured && (
                             <span className="px-2 py-1 bg-yellow-500 text-white text-xs rounded-full">
                               Featured
                             </span>
                           )}
-                          {item.isSpecial && (
-                            <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">
-                              Special
-                            </span>
-                          )}
-                          {!item.isAvailable && (
+                          {!item.available && (
                             <span className="px-2 py-1 bg-gray-500 text-white text-xs rounded-full">
                               Unavailable
                             </span>
@@ -364,13 +387,8 @@ export default function MenuManagementPage() {
                         {/* Price */}
                         <div className="flex items-center gap-2 mb-3">
                           <span className="text-2xl font-bold text-orange-500">
-                            ${item.price?.toFixed(2)}
+                            ${typeof item.price === 'number' ? item.price.toFixed(2) : parseFloat(item.price || '0').toFixed(2)}
                           </span>
-                          {item.isSpecial && item.specialPrice && (
-                            <span className="text-sm text-gray-500 line-through">
-                              ${item.specialPrice.toFixed(2)}
-                            </span>
-                          )}
                         </div>
 
                         {/* Meta Info */}
@@ -415,7 +433,7 @@ export default function MenuManagementPage() {
                               whileTap={{ scale: 0.9 }}
                               onClick={() => toggleAvailabilityMutation.mutate(item.id)}
                               className={`p-2 rounded ${
-                                item.isAvailable
+                                item.available
                                   ? 'text-green-600 hover:bg-green-50'
                                   : 'text-gray-400 hover:bg-gray-50'
                               }`}
@@ -428,7 +446,7 @@ export default function MenuManagementPage() {
                               whileTap={{ scale: 0.9 }}
                               onClick={() => toggleFeaturedMutation.mutate(item.id)}
                               className={`p-2 rounded ${
-                                item.isFeatured
+                                item.featured
                                   ? 'text-yellow-500 hover:bg-yellow-50'
                                   : 'text-gray-400 hover:bg-gray-50'
                               }`}
@@ -535,27 +553,16 @@ export default function MenuManagementPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Price*</label>
                     <input
                       type="number"
                       step="0.01"
                       value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                       required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Special Price</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.specialPrice}
-                      onChange={(e) => setFormData({ ...formData, specialPrice: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                     />
                   </div>
 
@@ -564,7 +571,7 @@ export default function MenuManagementPage() {
                     <input
                       type="number"
                       value={formData.preparationTime}
-                      onChange={(e) => setFormData({ ...formData, preparationTime: parseInt(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, preparationTime: parseInt(e.target.value) || 15 })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                     />
                   </div>
@@ -588,22 +595,31 @@ export default function MenuManagementPage() {
                       <Upload className="w-4 h-4" />
                       Upload Image
                     </button>
-                    {formData.imageUrl && (
+                    {formData.imageUrl ? (
                       <img
                         src={formData.imageUrl}
                         alt="Preview"
+                        className="h-20 w-20 object-cover rounded"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={PLACEHOLDER_IMAGE}
+                        alt="Placeholder"
                         className="h-20 w-20 object-cover rounded"
                       />
                     )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={formData.isAvailable}
-                      onChange={(e) => setFormData({ ...formData, isAvailable: e.target.checked })}
+                      checked={formData.available}
+                      onChange={(e) => setFormData({ ...formData, available: e.target.checked })}
                       className="rounded"
                     />
                     <span className="text-sm">Available</span>
@@ -612,21 +628,11 @@ export default function MenuManagementPage() {
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={formData.isFeatured}
-                      onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                      checked={formData.featured}
+                      onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
                       className="rounded"
                     />
                     <span className="text-sm">Featured</span>
-                  </label>
-
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.isSpecial}
-                      onChange={(e) => setFormData({ ...formData, isSpecial: e.target.checked })}
-                      className="rounded"
-                    />
-                    <span className="text-sm">Special</span>
                   </label>
                 </div>
 

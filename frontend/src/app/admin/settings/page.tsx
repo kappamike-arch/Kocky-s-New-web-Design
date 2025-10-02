@@ -38,7 +38,7 @@ export default function SettingsPage() {
 
   // Test email mutation
   const testEmailMutation = useMutation({
-    mutationFn: (email: string) => settings.testEmail(email),
+    mutationFn: (email: string) => settings.sendTestEmail(email),
     onSuccess: () => {
       toast.success('Test email sent successfully');
     },
@@ -49,7 +49,7 @@ export default function SettingsPage() {
 
   // Reset settings mutation
   const resetMutation = useMutation({
-    mutationFn: settings.resetToDefaults,
+    mutationFn: settings.reset,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['site-settings'] });
       toast.success('Settings reset to defaults');

@@ -9,6 +9,25 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+// Utility function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  if (!text) return text;
+  
+  // Create a temporary div element to decode HTML entities
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
+// Utility function to encode HTML entities
+const encodeHtmlEntities = (text: string): string => {
+  if (!text) return text;
+  
+  const textarea = document.createElement('textarea');
+  textarea.textContent = text;
+  return textarea.innerHTML;
+};
+
 export default function ServiceSettingsPage() {
   const [activeService, setActiveService] = useState<'food-truck' | 'mobile-bar'>('mobile-bar');
   const [settings, setSettings] = useState<ServiceSettings | null>(null);
@@ -22,12 +41,24 @@ export default function ServiceSettingsPage() {
   const loadSettings = async () => {
     try {
       const data = await servicesAPI.getSettings(activeService);
-      // Ensure packages array exists
-      const settingsWithPackages = {
+      
+      // Decode HTML entities in text fields
+      const decodedData = {
         ...data,
-        packages: data.packages || []
+        title: decodeHtmlEntities(data.title || ''),
+        subtitle: decodeHtmlEntities(data.subtitle || ''),
+        description: decodeHtmlEntities(data.description || ''),
+        packages: (data.packages || []).map((pkg: any) => ({
+          ...pkg,
+          name: decodeHtmlEntities(pkg.name || ''),
+          price: decodeHtmlEntities(pkg.price || ''),
+          duration: decodeHtmlEntities(pkg.duration || ''),
+          guests: decodeHtmlEntities(pkg.guests || ''),
+          features: (pkg.features || []).map((feature: string) => decodeHtmlEntities(feature))
+        }))
       };
-      setSettings(settingsWithPackages);
+      
+      setSettings(decodedData);
     } catch (error) {
       console.error('Failed to load settings:', error);
       toast.error('Failed to load settings');
@@ -39,7 +70,23 @@ export default function ServiceSettingsPage() {
     
     setIsSaving(true);
     try {
-      await servicesAPI.updateSettings(activeService, settings);
+      // Encode HTML entities before saving to prevent double-encoding
+      const encodedSettings = {
+        ...settings,
+        title: encodeHtmlEntities(settings.title || ''),
+        subtitle: encodeHtmlEntities(settings.subtitle || ''),
+        description: encodeHtmlEntities(settings.description || ''),
+        packages: (settings.packages || []).map((pkg: any) => ({
+          ...pkg,
+          name: encodeHtmlEntities(pkg.name || ''),
+          price: encodeHtmlEntities(pkg.price || ''),
+          duration: encodeHtmlEntities(pkg.duration || ''),
+          guests: encodeHtmlEntities(pkg.guests || ''),
+          features: (pkg.features || []).map((feature: string) => encodeHtmlEntities(feature))
+        }))
+      };
+      
+      await servicesAPI.updateSettings(activeService, encodedSettings);
       toast.success('Settings saved successfully');
       setIsEditing(false);
     } catch (error) {
@@ -315,7 +362,7 @@ export default function ServiceSettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Instant Quote Rate ($/guest/hour)</label>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Instant Quote Rate ($/guest)</label>
                         <input
                           type="number"
                           min="0"

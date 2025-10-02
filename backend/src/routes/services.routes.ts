@@ -35,18 +35,17 @@ const upload = multer({
 });
 
 // Public route to get service settings
-router.get('/:service', servicesController.getServiceSettings);
+router.get('/services/:service', servicesController.getServiceSettings);
 
 // Admin routes (require authentication)
-// TODO: Re-enable authentication after testing
-// router.use(authenticate);
-// router.use(authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN));
+router.use(authenticate);
+router.use(authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN));
 
 // Update service settings
-router.put('/:service', servicesController.updateServiceSettings);
+router.put('/services/:service', servicesController.updateServiceSettings);
 
 // Upload service image
-router.post('/:service/image', upload.single('image'), servicesController.uploadServiceImage);
+router.post('/services/:service/image', upload.single('image'), servicesController.uploadServiceImage);
 
 export default router;
 

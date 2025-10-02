@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../server';
+import { prisma } from '../lib/prisma';
+import { getUploadUrl, mediaExists } from '../middleware/upload';
 import { AuthRequest } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import multer from 'multer';
@@ -55,6 +56,54 @@ const generateThumbnail = async (imagePath: string, filename: string): Promise<s
   return `/uploads/gallery/thumbnails/thumb-${filename}`;
 };
 
+const GALLERY_PLACEHOLDER_RELATIVE = 'uploads/placeholders/gallery-placeholder.png';
+const FRONTEND_BASE = (process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || process.env.BACKEND_URL || '').replace(/\/$/, '');
+const GALLERY_PLACEHOLDER_ABSOLUTE = FRONTEND_BASE ? `${FRONTEND_BASE}/admin/placeholder-gallery.svg` : '/admin/placeholder-gallery.svg';
+
+const decodeHtmlEntities = (value?: string | null): string | null => {
+  if (!value) return null;
+  return value.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&');
+};
+
+const augmentGalleryItem = (item: any) => {
+  const rawImage = decodeHtmlEntities(item?.imageUrl);
+  const rawThumb = decodeHtmlEntities(item?.thumbnailUrl);
+
+  let resolvedImage = rawImage ?? null;
+  let imageAvailable = false;
+
+  if (typeof rawImage === 'string' && rawImage.trim()) {
+    if (rawImage.startsWith('http')) {
+      resolvedImage = rawImage;
+      imageAvailable = true;
+    } else {
+      const normalized = rawImage.replace(/^\/+/, '');
+      const effectivePath = normalized.startsWith('uploads/') ? normalized : `uploads/${normalized}`;
+      if (mediaExists(effectivePath)) {
+        resolvedImage = getUploadUrl(effectivePath);
+        imageAvailable = true;
+      }
+    }
+  }
+
+  if (!imageAvailable) {
+    resolvedImage = GALLERY_PLACEHOLDER_ABSOLUTE;
+  }
+
+  const thumbnail = rawThumb
+    ? getUploadUrl(rawThumb.replace(/^\/+/, '').replace(/^uploads\//, 'uploads/'))
+    : null;
+
+  return {
+    ...item,
+    imageUrl: rawImage && !rawImage.startsWith('http') ? `/${rawImage.replace(/^\/+/, '')}` : rawImage,
+    thumbnailUrl: rawThumb && !rawThumb.startsWith('http') ? `/${rawThumb.replace(/^\/+/, '')}` : rawThumb,
+    imagePreviewUrl: resolvedImage,
+    thumbnailPreviewUrl: thumbnail,
+    imageAvailable
+  };
+};
+
 // Get all gallery items
 export const getGalleryItems = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -72,9 +121,12 @@ export const getGalleryItems = async (req: Request, res: Response, next: NextFun
       ]
     });
     
+    const normalized = items.map(augmentGalleryItem);
+
     res.json({
       success: true,
-      data: items
+      data: normalized,
+      items: normalized
     });
   } catch (error) {
     logger.error('Failed to fetch gallery items:', error);
@@ -131,7 +183,7 @@ export const createGalleryItem = async (req: AuthRequest, res: Response, next: N
     
     res.status(201).json({
       success: true,
-      data: item,
+      data: augmentGalleryItem(item),
       message: 'Gallery item created successfully'
     });
   } catch (error) {
@@ -189,7 +241,7 @@ export const updateGalleryItem = async (req: AuthRequest, res: Response, next: N
     
     res.json({
       success: true,
-      data: item,
+      data: augmentGalleryItem(item),
       message: 'Gallery item updated successfully'
     });
   } catch (error) {
@@ -337,7 +389,7 @@ export const bulkUploadGalleryItems = async (req: AuthRequest, res: Response, ne
     
     res.status(201).json({
       success: true,
-      data: items,
+      data: items.map(augmentGalleryItem),
       message: `${items.length} gallery items uploaded successfully`
     });
   } catch (error) {

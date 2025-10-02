@@ -36,15 +36,13 @@ router.get(
 );
 
 // Protected routes - Admin/Staff
-// DEMO: Temporarily disable auth for frontend access
-// router.get(
-//   '/',
-//   authenticate,
-//   authorize(UserRole.STAFF, UserRole.ADMIN, UserRole.SUPER_ADMIN),
-//   validate(queryReservationsSchema),
-//   reservationController.getAllReservations
-// );
-router.get('/', validate(queryReservationsSchema), reservationController.getAllReservations);
+router.get(
+  '/',
+  authenticate,
+  authorize(UserRole.STAFF, UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  validate(queryReservationsSchema),
+  reservationController.getAllReservations
+);
 
 router.get(
   '/:id',

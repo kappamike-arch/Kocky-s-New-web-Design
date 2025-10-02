@@ -10,7 +10,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
+  withCredentials: false,
 });
 
 // Add auth token to requests if available
@@ -20,6 +20,8 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Remove credentials requirement for now
+  config.withCredentials = false;
   return config;
 });
 

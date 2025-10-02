@@ -6,9 +6,8 @@ import { UserRole } from '@prisma/client';
 const router = Router();
 
 // All admin routes require authentication and admin role
-// TODO: Re-enable authentication after testing
-// router.use(authenticate);
-// router.use(authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN));
+router.use(authenticate);
+router.use(authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN));
 
 // Dashboard stats
 router.get('/dashboard', adminController.getDashboardStats);
@@ -16,7 +15,6 @@ router.get('/analytics', adminController.getAnalytics);
 
 // User management
 router.get('/users', adminController.getAllUsers);
-router.post('/users', adminController.createUser);
 router.get('/users/:id', adminController.getUser);
 router.put('/users/:id', adminController.updateUser);
 router.delete('/users/:id', authorize(UserRole.SUPER_ADMIN), adminController.deleteUser);

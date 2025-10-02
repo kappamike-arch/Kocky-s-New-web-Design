@@ -72,6 +72,10 @@ export default function HomePageClient({ settings, heroSettings: initialHeroSett
         // Load page content for video
         const pageContent = await pageContentAPI.getBySlug('home');
         
+        console.log('[HERO] API Response - Settings:', settings);
+        console.log('[HERO] API Response - Page Content:', pageContent);
+        console.log('[HERO] Background media available:', !!(settings?.backgroundVideo || settings?.backgroundImage || pageContent?.heroVideo || pageContent?.heroImage));
+        
         if (settings || pageContent) {
           if (process.env.NODE_ENV === 'development') {
             console.log('Loaded home hero settings from API:', settings);
@@ -123,11 +127,21 @@ export default function HomePageClient({ settings, heroSettings: initialHeroSett
           // Set video/image from page content (fallback)
           if (pageContent && !settings?.backgroundVideo) {
             if (pageContent.heroVideo) {
-              setHeroVideo(`${MEDIA_ORIGIN.replace('/uploads', '')}${pageContent.heroVideo}`);
+              // Fix media URL construction
+              const videoUrl = pageContent.heroVideo.startsWith('/uploads/') 
+                ? `${MEDIA_ORIGIN}${pageContent.heroVideo}`
+                : pageContent.heroVideo;
+              console.log('[HERO] Setting video from page content:', videoUrl);
+              setHeroVideo(videoUrl);
               setVideoError(false);
             }
             if (pageContent.heroImage && !settings?.backgroundImage) {
-              setHeroBackground(`${MEDIA_ORIGIN.replace('/uploads', '')}${pageContent.heroImage}`);
+              // Fix media URL construction
+              const imageUrl = pageContent.heroImage.startsWith('/uploads/') 
+                ? `${MEDIA_ORIGIN}${pageContent.heroImage}`
+                : pageContent.heroImage;
+              console.log('[HERO] Setting background from page content:', imageUrl);
+              setHeroBackground(imageUrl);
             }
           }
           

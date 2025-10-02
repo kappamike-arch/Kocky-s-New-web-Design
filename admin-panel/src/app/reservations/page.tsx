@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inquiries } from '@/lib/api/inquiries';
+import { api } from '@/lib/api/client';
 import {
   Calendar, Clock, Users, MapPin, Phone, Mail,
   Check, X, Eye, Edit, Trash2, Plus, Search, Filter
@@ -21,10 +22,12 @@ export default function ReservationsPage() {
   // Fetch reservations
   const { data, isLoading, error } = useQuery({
     queryKey: ['reservations', statusFilter],
-    queryFn: () => inquiries.getAll({
-      type: 'RESERVATION',
-      status: statusFilter === 'ALL' ? undefined : statusFilter,
-    }),
+    queryFn: () => api.get('/crm/inquiries', { 
+      params: {
+        serviceType: 'RESERVATION',
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+      }
+    }).then(res => res.data),
   });
 
   // Update status mutation

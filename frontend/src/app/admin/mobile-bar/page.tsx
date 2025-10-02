@@ -6,16 +6,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inquiries } from '@/lib/api/inquiries';
 import {
   Wine, Calendar, MapPin, Users, Phone, Mail,
-  Check, X, Eye, DollarSign, Clock, MessageCircle, Beer
+  Check, X, Eye, DollarSign, Clock, MessageCircle, Beer, Edit
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
+import { createQuoteUrl } from '@/utils/mapInquiryToQuote';
 
 export default function MobileBarPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Fetch mobile bar requests
   const { data, isLoading, error } = useQuery({
@@ -53,8 +56,27 @@ export default function MobileBarPage() {
       case 'REJECTED': return 'bg-red-100 text-red-700';
       case 'COMPLETED': return 'bg-blue-100 text-blue-700';
       case 'CANCELLED': return 'bg-gray-100 text-gray-700';
+      case 'QUOTED': return 'bg-purple-100 text-purple-700';
       default: return 'bg-gray-100 text-gray-700';
     }
+  };
+
+  const handleCreateQuote = (request: any) => {
+    const inquiryData = {
+      id: request.id,
+      name: request.name,
+      email: request.email,
+      phone: request.phone,
+      eventDate: request.eventDate,
+      guestCount: request.guestCount,
+      budget: request.budget,
+      details: request.message || request.details,
+      location: request.location,
+      type: 'MOBILE_BAR' as const,
+    };
+    
+    const quoteUrl = createQuoteUrl(inquiryData);
+    router.push(quoteUrl);
   };
 
   // Mock data if API not available
@@ -297,6 +319,16 @@ export default function MobileBarPage() {
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
+                          </motion.button>
+
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleCreateQuote(request)}
+                            className="text-gray-600 hover:text-orange-600"
+                            title="Edit / Create Quote"
+                          >
+                            <Edit className="w-4 h-4" />
                           </motion.button>
 
                           {request.status === 'PENDING' && (

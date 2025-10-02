@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,10 +21,14 @@ const schema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
   customerId: z.string().optional(),
+  customerName: z.string().optional(),
+  customerEmail: z.string().optional(),
+  customerPhone: z.string().optional(),
   inquiryId: z.string().optional(),
   eventDate: z.string().optional(),
   eventLocation: z.string().optional(),
   guestCount: z.number().min(1).optional(),
+  serviceType: z.string().optional(),
   items: z.array(z.object({
     name: z.string().min(1, 'Item name is required'),
     description: z.string().optional(),
@@ -59,6 +63,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function NewQuotePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [showPreview, setShowPreview] = useState(false);
 
@@ -72,6 +77,11 @@ export default function NewQuotePage() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      customerName: '',
+      customerEmail: '',
+      customerPhone: '',
+      inquiryId: '',
+      serviceType: '',
       items: [{ name: '', description: '', quantity: 1, unitPrice: 0 }],
       packages: [],
       laborItems: [],
@@ -88,6 +98,52 @@ export default function NewQuotePage() {
     control,
     name: 'items',
   });
+
+  // Handle prefilled data from query parameters
+  useEffect(() => {
+    const prefilledData: Partial<FormData> = {};
+    
+    // Extract data from URL parameters
+    const customerName = searchParams.get('customerName');
+    const customerEmail = searchParams.get('customerEmail');
+    const phone = searchParams.get('phone');
+    const eventDate = searchParams.get('eventDate');
+    const guestCount = searchParams.get('guestCount');
+    const budget = searchParams.get('budget');
+    const notes = searchParams.get('notes');
+    const location = searchParams.get('location');
+    const sourceRequestId = searchParams.get('sourceRequestId');
+    const serviceType = searchParams.get('serviceType');
+
+    if (customerName) prefilledData.title = `Quote for ${customerName}`;
+    if (customerEmail) prefilledData.customerEmail = customerEmail;
+    if (phone) prefilledData.customerPhone = phone;
+    if (eventDate) prefilledData.eventDate = eventDate;
+    if (guestCount) prefilledData.guestCount = parseInt(guestCount);
+    if (location) prefilledData.eventLocation = location;
+    if (notes) prefilledData.description = notes;
+    if (sourceRequestId) prefilledData.inquiryId = sourceRequestId;
+    if (serviceType) prefilledData.serviceType = serviceType;
+
+    // Set prefilled values
+    Object.entries(prefilledData).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        setValue(key as keyof FormData, value);
+      }
+    });
+
+    // Add initial item based on service type
+    if (serviceType && customerName) {
+      const serviceItems = {
+        'FOOD_TRUCK': { name: 'Food Truck Service', description: `Catering service for ${customerName}`, quantity: 1, unitPrice: 0 },
+        'MOBILE_BAR': { name: 'Mobile Bar Service', description: `Bar service for ${customerName}`, quantity: 1, unitPrice: 0 },
+        'CATERING': { name: 'Catering Service', description: `Catering service for ${customerName}`, quantity: 1, unitPrice: 0 },
+      };
+      
+      const defaultItem = serviceItems[serviceType as keyof typeof serviceItems] || serviceItems['CATERING'];
+      setValue('items.0', defaultItem);
+    }
+  }, [searchParams, setValue]);
 
   const { fields: packageFields, append: appendPackage, remove: removePackage } = useFieldArray({
     control,
@@ -117,11 +173,18 @@ export default function NewQuotePage() {
       ...data,
       generatePaymentLink: true,
     }),
-    onSuccess: (data) => {
-      toast.success('Quote created successfully');
+    onSuccess: (data, variables) => {
+      // Log inquiry to quote conversion
+      if (variables.inquiryId && variables.serviceType) {
+        console.log(`[Quote] Created from ${variables.serviceType}Request ID=${variables.inquiryId} → Quote ID=${data.id}`);
+        toast.success(`Quote created successfully from ${variables.serviceType.toLowerCase()} request`);
+      } else {
+        toast.success('Quote created successfully');
+      }
       router.push(`/admin/quotes/${data.id}`);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('[Quote] Failed to create quote:', error);
       toast.error('Failed to create quote');
     },
   });

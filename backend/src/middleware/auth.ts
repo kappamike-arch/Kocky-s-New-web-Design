@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../server';
+import { prisma } from '../lib/prisma';
 import { UserRole } from '@prisma/client';
 
 export interface AuthRequest extends Request {
@@ -17,7 +17,19 @@ export const authenticate = async (
   next: NextFunction
 ) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Try Authorization header first
+    let token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    // If no Authorization header, try to get token from cookies
+    if (!token) {
+      const cookies = req.headers.cookie;
+      if (cookies) {
+        const authTokenMatch = cookies.match(/auth-token=([^;]+)/);
+        if (authTokenMatch) {
+          token = authTokenMatch[1];
+        }
+      }
+    }
 
     if (!token) {
       throw new Error();
@@ -29,26 +41,20 @@ export const authenticate = async (
       role: UserRole;
     };
 
-    let user = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: { id: true, email: true, role: true },
     });
 
-    // If user not found in database, use mock user data from JWT token
     if (!user) {
-      user = {
-        id: decoded.id,
-        email: decoded.email,
-        role: decoded.role,
-      };
+      throw new Error();
     }
 
     req.user = user;
     next();
   } catch (error) {
     res.status(401).json({ 
-      success: false, 
-      message: 'Please authenticate' 
+      error: "UNAUTHORIZED" 
     });
   }
 };
@@ -57,8 +63,7 @@ export const authorize = (...roles: UserRole[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({
-        success: false,
-        message: 'Authentication required',
+        error: "UNAUTHORIZED"
       });
     }
 

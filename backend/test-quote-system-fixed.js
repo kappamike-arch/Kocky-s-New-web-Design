@@ -97,3 +97,5 @@ async function testQuoteSystem() {
 // Run the test
 testQuoteSystem();
 
+
+

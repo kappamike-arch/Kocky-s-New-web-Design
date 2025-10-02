@@ -230,16 +230,26 @@ export default function MediaManagementPage() {
       
       if (type === 'video') {
         // Use backend API for video uploads
-        const { heroSettingsAPI } = await import('../../lib/api/hero-settings');
-        const result = await heroSettingsAPI.uploadVideo(sectionId, file);
-        fileUrl = getMediaUrl(result.videoUrl);
+        try {
+          const { heroSettingsAPI } = await import('../../lib/api/hero-settings');
+          const result = await heroSettingsAPI.uploadVideo(sectionId, file);
+          fileUrl = getMediaUrl(result.videoUrl);
+        } catch (importError) {
+          console.error('Failed to import heroSettingsAPI:', importError);
+          throw new Error('Failed to load upload module');
+        }
       } else {
         // Use backend API for image uploads (same as videos)
-        const { heroSettingsAPI } = await import('../../lib/api/hero-settings');
-        console.log(`🖼️ Uploading image for ${sectionId}:`, file.name, file.type, file.size);
-        const result = await heroSettingsAPI.uploadImage(sectionId, file);
-        console.log(`✅ Image upload result for ${sectionId}:`, result);
-        fileUrl = getMediaUrl(result.imageUrl);
+        try {
+          const { heroSettingsAPI } = await import('../../lib/api/hero-settings');
+          console.log(`🖼️ Uploading image for ${sectionId}:`, file.name, file.type, file.size);
+          const result = await heroSettingsAPI.uploadImage(sectionId, file);
+          console.log(`✅ Image upload result for ${sectionId}:`, result);
+          fileUrl = getMediaUrl(result.imageUrl);
+        } catch (importError) {
+          console.error('Failed to import heroSettingsAPI:', importError);
+          throw new Error('Failed to load upload module');
+        }
       }
       
       // Update uploaded files with the new file URL

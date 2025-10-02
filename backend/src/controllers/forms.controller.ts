@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../server';
-import { sendEmail } from '../utils/email';
+import { prisma } from '../lib/prisma';
+import { unifiedEmailService } from '../services/UnifiedEmailService';
+import { renderEmailTemplate } from '../utils/email-template';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 
@@ -78,9 +79,9 @@ export const submitForm = async (req: Request, res: Response, next: NextFunction
             eventTime: formData.eventTime,
             eventDuration: formData.eventDuration || 4,
             eventLocation: formData.location || formData.eventLocation,
-            eventType: formData.eventType,
+            eventType: formData.eventType || 'Private Event',
             expectedGuests: parseInt(formData.guestCount || formData.expectedGuests),
-            packageType: formData.packageType || 'CUSTOM',
+            packageType: formData.packageType === 'premium' ? 'PREMIUM' : formData.packageType === 'custom' ? 'CUSTOM' : formData.packageType === 'basic' ? 'BASIC' : 'STANDARD',
             addOns: formData.addOns || [],
             specialRequests: formData.message || formData.specialRequests,
             budget: formData.budget ? parseFloat(formData.budget) : null,
@@ -152,32 +153,104 @@ export const submitForm = async (req: Request, res: Response, next: NextFunction
         });
     }
     
-    // Send confirmation email
+    // Send confirmation email using Azure email system
     try {
-      await sendEmail({
-        to: formData.contactEmail || formData.email,
-        subject: `Kocky's Bar & Grill – ${emailData.bookingType} Received`,
-        template: 'booking-received',
-        data: emailData,
+      // Get the appropriate email template based on form type
+      const templateSlug = getTemplateSlugForFormType(formType);
+      const template = await prisma.emailTemplate.findUnique({
+        where: { slug: templateSlug },
       });
-      logger.info(`Confirmation email sent to ${formData.contactEmail || formData.email}`);
+
+      if (template) {
+        const customerData = {
+          customerName: emailData.name,
+          customerEmail: formData.contactEmail || formData.email,
+          serviceName: emailData.bookingType,
+          eventDate: emailData.date,
+          eventTime: emailData.eventTime,
+          eventLocation: emailData.location,
+          guestCount: emailData.guestCount,
+          confirmationCode: emailData.confirmationCode,
+          message: 'Thank you for your inquiry! We will review your request and get back to you within 24 hours.'
+        };
+
+        const renderedSubject = renderEmailTemplate(template.subject, customerData);
+        const renderedHtml = renderEmailTemplate(template.html || template.body || '', customerData);
+        const renderedText = template.text ? renderEmailTemplate(template.text, customerData) : undefined;
+
+        const customerEmailSent = await unifiedEmailService.sendEmail({
+          to: formData.contactEmail || formData.email,
+          subject: renderedSubject,
+          html: renderedHtml,
+          text: renderedText,
+          provider: 'azure'
+        });
+
+        if (customerEmailSent) {
+          logger.info(`Customer confirmation email sent for ${formType} inquiry via Azure`);
+        } else {
+          logger.warn(`Failed to send customer confirmation email for ${formType} inquiry via Azure`);
+        }
+      } else {
+        const customerData = {
+          customerName: emailData.name,
+          customerEmail: formData.contactEmail || formData.email,
+          serviceName: emailData.bookingType,
+          eventDate: emailData.date,
+          eventTime: emailData.eventTime,
+          eventLocation: emailData.location,
+          guestCount: emailData.guestCount,
+          confirmationCode: emailData.confirmationCode,
+        };
+
+        const fallbackSubject = `Kocky's Bar & Grill – ${emailData.bookingType} Received`;
+        const fallbackHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1>Thank You for Your Inquiry!</h1>
+            <p>Dear ${emailData.name},</p>
+            <p>We've received your ${emailData.bookingType} request and are excited to help make your event special!</p>
+            <p><strong>Confirmation Code:</strong> ${emailData.confirmationCode}</p>
+            <p>Our team will review your request and contact you within 24 hours.</p>
+            <p>Best regards,<br>The Kocky's Bar & Grill Team</p>
+          </div>
+        `;
+        
+        const fallbackEmailSent = await unifiedEmailService.sendEmail({
+          to: formData.contactEmail || formData.email,
+          subject: fallbackSubject,
+          html: fallbackHtml,
+          provider: 'azure'
+        });
+
+        if (fallbackEmailSent) {
+          logger.info(`Fallback customer confirmation email sent for ${formType} inquiry via Azure`);
+        } else {
+          logger.warn(`Failed to send fallback customer confirmation email for ${formType} inquiry via Azure`);
+        }
+      }
     } catch (emailError) {
       logger.error('Failed to send confirmation email:', emailError);
       // Don't fail the entire request if email fails
     }
     
-    // Send notification to admin
+    // Send notification to admin using Azure email system
     if (process.env.ADMIN_EMAIL) {
       try {
-        await sendEmail({
+        const adminSubject = `New ${emailData.bookingType} - ${confirmationCode}`;
+        const adminHtml = generateAdminNotificationHtml(emailData, formType, confirmationCode);
+        
+        const adminEmailSent = await unifiedEmailService.sendEmail({
           to: process.env.ADMIN_EMAIL,
-          subject: `New ${emailData.bookingType} - ${confirmationCode}`,
-          template: 'booking-received',
-          data: {
-            ...emailData,
-            name: 'Admin',
-          },
+          subject: adminSubject,
+          html: adminHtml,
+          provider: 'azure'
         });
+
+        if (adminEmailSent) {
+          logger.info(`Admin notification email sent for ${formType} inquiry via Azure`);
+        } else {
+          logger.warn(`Failed to send admin notification email for ${formType} inquiry via Azure`);
+        }
       } catch (adminEmailError) {
         logger.error('Failed to send admin notification:', adminEmailError);
       }
@@ -261,3 +334,68 @@ export const getByConfirmationCode = async (req: Request, res: Response, next: N
     next(error);
   }
 };
+
+// Helper function to get template slug based on form type
+function getTemplateSlugForFormType(formType: string): string {
+  switch (formType) {
+    case 'reservation':
+      return 'reservation-confirmation';
+    case 'mobile-bar':
+      return 'mobile-bar-confirmation';
+    case 'food-truck':
+      return 'food-truck-confirmation';
+    case 'catering':
+      return 'catering-confirmation';
+    default:
+      return 'inquiry-confirmation';
+  }
+}
+
+// Helper function to generate admin notification HTML
+function generateAdminNotificationHtml(emailData: any, formType: string, confirmationCode: string): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #1a1a1a; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .info-box { background: white; padding: 15px; border: 1px solid #ddd; margin: 15px 0; }
+        .footer { background: #333; color: white; padding: 15px; text-align: center; font-size: 12px; }
+        .button { display: inline-block; padding: 12px 30px; background: #d4af37; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>New ${emailData.bookingType} Inquiry</h1>
+        </div>
+        <div class="content">
+          <div class="info-box">
+            <h3>Customer Information</h3>
+            <p><strong>Name:</strong> ${emailData.name}</p>
+            <p><strong>Email:</strong> ${emailData.customerEmail || 'Not provided'}</p>
+            <p><strong>Confirmation Code:</strong> ${confirmationCode}</p>
+          </div>
+          
+          <div class="info-box">
+            <h3>Event Details</h3>
+            <p><strong>Service:</strong> ${emailData.bookingType}</p>
+            ${emailData.date ? `<p><strong>Event Date:</strong> ${emailData.date}</p>` : ''}
+            ${emailData.eventTime ? `<p><strong>Event Time:</strong> ${emailData.eventTime}</p>` : ''}
+            ${emailData.location ? `<p><strong>Location:</strong> ${emailData.location}</p>` : ''}
+            ${emailData.guestCount ? `<p><strong>Expected Guests:</strong> ${emailData.guestCount}</p>` : ''}
+          </div>
+          
+          <p><strong>Action Required:</strong> Please review this inquiry and contact the customer within 24 hours.</p>
+        </div>
+        <div class="footer">
+          Kocky's Bar & Grill CRM System
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}

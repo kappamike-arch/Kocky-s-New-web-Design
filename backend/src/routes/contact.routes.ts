@@ -9,23 +9,19 @@ const router = Router();
 router.post('/', contactController.createInquiry);
 
 // Protected routes - Admin/Staff
-// DEMO: Temporarily disable auth for frontend access
-// router.get(
-//   '/',
-//   authenticate,
-//   authorize(UserRole.STAFF, UserRole.ADMIN, UserRole.SUPER_ADMIN),
-//   contactController.getAllInquiries
-// );
-router.get('/', contactController.getAllInquiries);
+router.get(
+  '/',
+  authenticate,
+  authorize(UserRole.STAFF, UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  contactController.getAllInquiries
+);
 
-// DEMO: Temporarily disable auth for frontend access
-// router.get(
-//   '/:id',
-//   authenticate,
-//   authorize(UserRole.STAFF, UserRole.ADMIN, UserRole.SUPER_ADMIN),
-//   contactController.getInquiry
-// );
-router.get('/:id', contactController.getInquiry);
+router.get(
+  '/:id',
+  authenticate,
+  authorize(UserRole.STAFF, UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  contactController.getInquiry
+);
 
 router.put(
   '/:id/status',

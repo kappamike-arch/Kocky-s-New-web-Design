@@ -1,6 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { api } from '@/lib/api/client';
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 import { motion } from 'framer-motion';
 import { 
   FileText, Plus, Send, Eye, Edit, Trash2, 
@@ -10,7 +16,6 @@ import {
 import { format } from 'date-fns';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { api } from '@/lib/api/client';
 
 interface Quote {
   id: string;
@@ -38,28 +43,48 @@ interface Quote {
 }
 
 export default function QuotesPage() {
+  console.log('🔍 Quotes page component mounted');
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+  const [testClick, setTestClick] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    fetchQuotes();
-  }, [filter]);
+    console.log('🔍 Quotes page useEffect - setting mounted to true');
+    console.log('✅ useEffect is working! Client-side JavaScript is executing.');
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    console.log('🔍 Quotes page useEffect called, filter:', filter);
+    if (mounted) {
+      console.log('🔍 Component is mounted, fetching quotes...');
+      fetchQuotes();
+    } else {
+      console.log('🔍 Component not mounted yet, skipping fetch');
+    }
+  }, [filter, mounted]);
 
   const fetchQuotes = async () => {
     try {
-      const params = new URLSearchParams();
-      if (filter !== 'ALL') params.append('status', filter);
+      console.log('🔍 Fetching quotes...');
+      const response = await api.get('/quotes');
+      const data = response.data;
+      console.log('📊 Quotes response:', data);
       
-      const response = await api.get(`/quotes?${params}`);
-      if (response.data && response.data.success) {
-        setQuotes(response.data.quotes || []);
+      if (data && data.success) {
+        setQuotes(data.quotes || []);
+        console.log('✅ Loaded', data.quotes?.length || 0, 'quotes');
+      } else {
+        setQuotes([]);
+        console.log('❌ No quotes found');
       }
     } catch (error: any) {
-      console.error('Error fetching quotes:', error);
-      toast.error('Failed to fetch quotes');
+      console.error('❌ Error fetching quotes:', error);
+      setQuotes([]);
     } finally {
       setLoading(false);
     }
@@ -67,7 +92,7 @@ export default function QuotesPage() {
 
   const updateQuoteStatus = async (quoteId: string, status: string) => {
     try {
-      const response = await api.put(`/quotes/${quoteId}/status`, { status });
+      const response = await api.patch(`/quotes/${quoteId}`, { status });
 
       if (response.data && response.data.success) {
         toast.success(`Quote status updated to ${status}`);
@@ -83,9 +108,7 @@ export default function QuotesPage() {
 
   const sendQuote = async (quoteId: string) => {
     try {
-      const response = await api.post(`/quotes/${quoteId}/send`, { 
-        message: 'Thank you for your inquiry. Please find attached our quote for your event.' 
-      });
+      const response = await api.post(`/quotes/${quoteId}/send-email`);
 
       if (response.data && response.data.success) {
         toast.success('Quote sent successfully');
@@ -194,6 +217,15 @@ export default function QuotesPage() {
     quote.inquiry.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (!mounted) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold">Quote Management</h1>
+        <p className="text-gray-600">Initializing...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -201,9 +233,18 @@ export default function QuotesPage() {
         <div>
           <h1 className="text-2xl font-bold">Quote Management</h1>
           <p className="text-gray-600">Create and manage quotes for inquiries</p>
+          <button 
+            onClick={() => {
+              console.log('🔍 Test button clicked!');
+              setTestClick(testClick + 1);
+            }}
+            className="bg-red-500 text-white px-4 py-2 rounded mt-2"
+          >
+            Test JS ({testClick})
+          </button>
         </div>
         <Link 
-          href="/inquiries"
+          href="/crm"
           className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />

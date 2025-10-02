@@ -12,7 +12,7 @@
     "generate": "prisma generate",
     "studio": "prisma studio",
     "seed": "ts-node prisma/seed.ts",
-    "test": "jest",
+    "test": "jest --config jest.config.ts",
     "diagnose:email": "node diagnose-email-issue.js",
     "test:email": "node test-basic-email.js",
     "test:quote-fixes": "node test-quote-fixes-comprehensive.js",

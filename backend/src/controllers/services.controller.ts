@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../server';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import path from 'path';
 import fs from 'fs';
@@ -170,9 +170,7 @@ function getDefaultSettings(service: 'food-truck' | 'mobile-bar') {
           price: 'Starting at $500',
           duration: '2 hours',
           guests: 'Up to 50 guests',
-          features: ['Limited menu', 'Basic setup', 'Paper products included'],
-          instantQuoteRate: 15,
-          instantQuoteEnabled: true
+          features: ['Limited menu', 'Basic setup', 'Paper products included']
         },
         {
           id: 'standard',
@@ -181,9 +179,7 @@ function getDefaultSettings(service: 'food-truck' | 'mobile-bar') {
           duration: '3 hours',
           guests: '50-100 guests',
           features: ['Full menu', 'Professional setup', 'Premium disposables', 'Beverage service'],
-          popular: true,
-          instantQuoteRate: 25,
-          instantQuoteEnabled: true
+          popular: true
         },
         {
           id: 'premium',
@@ -191,9 +187,7 @@ function getDefaultSettings(service: 'food-truck' | 'mobile-bar') {
           price: 'Starting at $2,000',
           duration: '4+ hours',
           guests: '100+ guests',
-          features: ['Custom menu', 'Full service team', 'Premium setup', 'Dessert included'],
-          instantQuoteRate: 40,
-          instantQuoteEnabled: true
+          features: ['Custom menu', 'Full service team', 'Premium setup', 'Dessert included']
         }
       ],
       features: [
@@ -241,9 +235,7 @@ function getDefaultSettings(service: 'food-truck' | 'mobile-bar') {
             'Soft drinks & mixers',
             'Ice & garnishes',
             'Disposable barware'
-          ],
-          instantQuoteRate: 15,
-          instantQuoteEnabled: true
+          ]
         },
         {
           id: 'premium',
@@ -261,9 +253,7 @@ function getDefaultSettings(service: 'food-truck' | 'mobile-bar') {
             'Glassware included',
             'Custom cocktail creation',
             'Bar snacks & garnishes'
-          ],
-          instantQuoteRate: 25,
-          instantQuoteEnabled: true
+          ]
         },
         {
           id: 'luxury',
@@ -281,9 +271,7 @@ function getDefaultSettings(service: 'food-truck' | 'mobile-bar') {
             'LED bar lighting',
             'Dedicated event coordinator',
             'Complimentary tasting session'
-          ],
-          instantQuoteRate: 40,
-          instantQuoteEnabled: true
+          ]
         }
       ],
       features: [

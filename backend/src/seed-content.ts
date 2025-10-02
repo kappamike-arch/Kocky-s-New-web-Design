@@ -1,6 +1,5 @@
-import { PrismaClient, MenuType, MenuCategory } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { MenuType, MenuCategory } from '@prisma/client';
+import { prisma } from './lib/prisma';
 
 async function main() {
   console.log('🌱 Seeding content management data...');

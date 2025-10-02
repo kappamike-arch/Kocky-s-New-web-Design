@@ -1,5 +1,5 @@
 // Hero settings with database persistence
-import { prisma } from './server';
+import { prisma } from './lib/prisma';
 import { fixLogoUrl, getLogoWithFallback, syncLogoDirectories } from './hero-logo-fix';
 
 export interface HeroSettings {
@@ -10,7 +10,6 @@ export interface HeroSettings {
   logoUrl?: string;
   backgroundImage?: string;
   backgroundVideo?: string;
-  mediaPreference?: string;
   title?: string;
   subtitle?: string;
   description?: string;
@@ -41,9 +40,6 @@ const defaultSettings: Record<string, Omit<HeroSettings, 'id'>> = {
     pageSlug: '/happy-hour',
     useLogo: true,
     logoUrl: '/kockys-logo.png?v=1756432883',
-    backgroundImage: '/images/happy-hour-hero.jpg',
-    backgroundVideo: '/videos/happy-hour-hero.mp4',
-    mediaPreference: 'auto',
     title: 'Happy Hour Specials',
     subtitle: 'Daily 3PM - 6PM',
     description: 'Join us for amazing drink specials and appetizer deals'
@@ -53,9 +49,6 @@ const defaultSettings: Record<string, Omit<HeroSettings, 'id'>> = {
     pageSlug: '/brunch',
     useLogo: true,
     logoUrl: '/kockys-logo.png?v=1756432883',
-    backgroundImage: '/images/brunch-hero.jpg',
-    backgroundVideo: '/videos/brunch-hero.mp4',
-    mediaPreference: 'auto',
     title: 'Weekend Brunch',
     subtitle: 'Saturday & Sunday',
     description: 'Join us from 10am - 3pm for the best brunch in town'
@@ -68,6 +61,15 @@ const defaultSettings: Record<string, Omit<HeroSettings, 'id'>> = {
     title: 'Mobile Bar Service',
     subtitle: 'We Come to You',
     description: 'Professional bartending for your special events'
+  },
+  "food-truck": {
+    pageName: "Food Truck",
+    pageSlug: "/food-truck",
+    useLogo: true,
+    logoUrl: "/kockys-logo.png?v=1756432883",
+    title: "Food Truck Service",
+    subtitle: "Mobile Dining Experience",
+    description: "Bring our delicious food directly to your event"
   },
   catering: {
     pageName: 'Catering',
@@ -138,18 +140,17 @@ export async function initializeHeroSettings() {
 export async function getAllHeroSettings(): Promise<HeroSettings[]> {
   try {
     const settings = await prisma.heroSettings.findMany();
-    return settings.map(s => ({
-      id: s.pageId,
-      pageName: s.pageName,
-      pageSlug: s.pageSlug,
-      useLogo: s.useLogo,
-      logoUrl: fixLogoUrl(s.logoUrl, s.pageId),
-      backgroundImage: s.backgroundImage || undefined,
-      backgroundVideo: s.backgroundVideo || undefined,
-      mediaPreference: s.mediaPreference || undefined,
-      title: s.title || undefined,
-      subtitle: s.subtitle || undefined,
-      description: s.description || undefined
+    return settings.map((setting) => ({
+      id: setting.pageId,
+      pageName: setting.pageName,
+      pageSlug: setting.pageSlug,
+      useLogo: setting.useLogo,
+      logoUrl: fixLogoUrl(setting.logoUrl, setting.pageId),
+      backgroundImage: setting.backgroundImage || undefined,
+      backgroundVideo: setting.backgroundVideo || undefined,
+      title: setting.title || undefined,
+      subtitle: setting.subtitle || undefined,
+      description: setting.description || undefined
     }));
   } catch (error) {
     console.error('Error fetching hero settings:', error);
@@ -186,7 +187,6 @@ export async function getHeroSettings(pageId: string): Promise<HeroSettings | nu
           logoUrl: getLogoWithFallback(pageId, created.logoUrl),
           backgroundImage: created.backgroundImage || undefined,
           backgroundVideo: created.backgroundVideo || undefined,
-          mediaPreference: created.mediaPreference || undefined,
           title: created.title || undefined,
           subtitle: created.subtitle || undefined,
           description: created.description || undefined
@@ -198,30 +198,17 @@ export async function getHeroSettings(pageId: string): Promise<HeroSettings | nu
     // Fix logo URL to handle HTML entities and path issues
     const fixedLogoUrl = fixLogoUrl(settings.logoUrl, pageId);
     
-    // Clean HTML entities from all string fields
-    const cleanString = (str: string | null | undefined): string | undefined => {
-      if (!str) return undefined;
-      return str
-        .replace(/&#x2F;/g, '/')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#039;/g, "'");
-    };
-    
     return {
       id: pageId,
-      pageName: cleanString(settings.pageName) || settings.pageName,
-      pageSlug: cleanString(settings.pageSlug) || settings.pageSlug,
+      pageName: settings.pageName,
+      pageSlug: settings.pageSlug,
       useLogo: settings.useLogo,
       logoUrl: fixedLogoUrl,
-      backgroundImage: cleanString(settings.backgroundImage),
-      backgroundVideo: cleanString(settings.backgroundVideo),
-      mediaPreference: cleanString(settings.mediaPreference),
-      title: cleanString(settings.title),
-      subtitle: cleanString(settings.subtitle),
-      description: cleanString(settings.description)
+      backgroundImage: settings.backgroundImage || undefined,
+      backgroundVideo: settings.backgroundVideo || undefined,
+      title: settings.title || undefined,
+      subtitle: settings.subtitle || undefined,
+      description: settings.description || undefined
     };
   } catch (error) {
     console.error('Error fetching hero settings:', error);
@@ -234,16 +221,6 @@ export async function updateHeroSettings(pageId: string, settings: Partial<HeroS
   try {
     // Clean HTML entities from string fields
     const cleanedSettings = { ...settings };
-    if (cleanedSettings.pageSlug) {
-      cleanedSettings.pageSlug = cleanedSettings.pageSlug
-        .replace(/&amp;#x2F;/g, '/')  // Handle double-encoded slashes
-        .replace(/&#x2F;/g, '/')     // Handle single-encoded slashes
-        .replace(/&amp;/g, '&')      // Handle double-encoded ampersands
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#039;/g, "'");
-    }
     if (cleanedSettings.logoUrl) {
       cleanedSettings.logoUrl = cleanedSettings.logoUrl
         .replace(/&#x2F;/g, '/')
@@ -271,15 +248,6 @@ export async function updateHeroSettings(pageId: string, settings: Partial<HeroS
     }
     if (cleanedSettings.description) {
       cleanedSettings.description = cleanedSettings.description
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#039;/g, "'");
-    }
-    if (cleanedSettings.pageSlug) {
-      cleanedSettings.pageSlug = cleanedSettings.pageSlug
-        .replace(/&#x2F;/g, '/')
         .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
@@ -354,9 +322,6 @@ export async function updateHeroSettings(pageId: string, settings: Partial<HeroS
     if (cleanedSettings.backgroundVideo === undefined) {
       updateData.backgroundVideo = null;
     }
-    if (cleanedSettings.mediaPreference === undefined) {
-      updateData.mediaPreference = null;
-    }
     
     const updated = await prisma.heroSettings.update({
       where: { pageId },
@@ -371,7 +336,6 @@ export async function updateHeroSettings(pageId: string, settings: Partial<HeroS
       logoUrl: updated.logoUrl || undefined,
       backgroundImage: updated.backgroundImage || undefined,
       backgroundVideo: updated.backgroundVideo || undefined,
-      mediaPreference: updated.mediaPreference || undefined,
       title: updated.title || undefined,
       subtitle: updated.subtitle || undefined,
       description: updated.description || undefined

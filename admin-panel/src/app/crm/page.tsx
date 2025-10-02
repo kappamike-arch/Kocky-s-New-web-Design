@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { crmAPI } from '@/lib/api/crm';
+import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -75,15 +76,21 @@ export default function CRMDashboard() {
   const fetchInquiries = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
+      console.log('🔍 Fetching inquiries...');
+      const response = await api.get('/crm/inquiries');
+      const data = response.data;
+      console.log('📊 Inquiries response:', data);
       
-      const response = await crmAPI.getAllInquiries(filters);
-      setInquiries(response.data.data || response.data || []);
+      if (data && data.success) {
+        setInquiries(data.data || []);
+        console.log('✅ Loaded', data.data?.length || 0, 'inquiries');
+      } else {
+        setInquiries([]);
+        console.log('❌ No inquiries found');
+      }
     } catch (error) {
-      console.error('Failed to fetch inquiries:', error);
+      console.error('❌ Failed to fetch inquiries:', error);
+      setInquiries([]);
     } finally {
       setLoading(false);
     }

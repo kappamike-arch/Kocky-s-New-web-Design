@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './lib/prisma';
 import { logger } from './utils/logger';
-
-const prisma = new PrismaClient();
 
 async function seedHappyHourPage() {
   try {
@@ -45,7 +43,10 @@ async function seedHappyHourPage() {
     logger.error('Failed to seed Happy Hour page:', error);
     throw error;
   } finally {
-    await prisma.$disconnect();
+    // Ensure we disconnect the shared client only if this script is run standalone
+    if (require.main === module) {
+      await prisma.$disconnect();
+    }
   }
 }
 

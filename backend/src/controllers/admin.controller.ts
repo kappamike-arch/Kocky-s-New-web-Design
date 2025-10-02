@@ -1,9 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../server';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import fs from 'fs';
 import path from 'path';
-import bcrypt from 'bcrypt';
 
 export const getDashboardStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -152,57 +151,6 @@ export const getAllUsers = async (req: AuthRequest, res: Response, next: NextFun
 
     res.json({ success: true, users });
   } catch (error) {
-    next(error);
-  }
-};
-
-export const createUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const { email, password, firstName, lastName, role } = req.body;
-
-    // Validate required fields
-    if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Email and password are required' 
-      });
-    }
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'User with this email already exists' 
-      });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name: `${firstName || ''} ${lastName || ''}`.trim() || null,
-        role: role || 'CUSTOMER'
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true
-      }
-    });
-
-    res.status(201).json({ success: true, user });
-  } catch (error) {
-    console.error('Error creating user:', error);
     next(error);
   }
 };

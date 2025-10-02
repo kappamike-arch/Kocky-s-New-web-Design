@@ -1,9 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
-
-// Initialize Prisma Client
-const prisma = new PrismaClient();
 
 // Package Management
 export const getAllPackages = async (req: Request, res: Response, next: NextFunction) => {

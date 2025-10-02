@@ -9,6 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Calculator, RotateCcw, DollarSign } from 'lucide-react';
 import { instantQuotesAPI, InstantQuotePackage } from '@/lib/api/instant-quotes';
 
+// Configurable constants - easily editable by admins/devs
+const HOURLY_SERVICE_RATE = 100; // $100/hour - editable
+const MIN_HOURS = 2; // Minimum hours - editable
+
 interface InstantQuoteFormProps {
   serviceType: 'Mobile Bar' | 'Food Truck';
 }
@@ -22,6 +26,12 @@ interface FormData {
 interface ValidationErrors {
   guests?: string;
   hours?: string;
+  package?: string;
+}
+
+interface QuoteResult {
+  totalCost: number;
+  ratePerPerson: number;
 }
 
 export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
@@ -34,7 +44,7 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [quote, setQuote] = useState<number | null>(null);
+  const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
   const [isCalculated, setIsCalculated] = useState(false);
 
   // Load packages from API
@@ -66,8 +76,12 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
       newErrors.guests = 'Number of guests must be greater than 0';
     }
 
-    if (!formData.hours || formData.hours <= 0) {
-      newErrors.hours = 'Hours of service must be greater than 0';
+    if (!formData.hours || formData.hours < MIN_HOURS) {
+      newErrors.hours = `Hours of service must be at least ${MIN_HOURS} hours`;
+    }
+
+    if (!formData.package) {
+      newErrors.package = 'Please select a package';
     }
 
     setErrors(newErrors);
@@ -84,9 +98,18 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
       return;
     }
 
-    const total = formData.guests * formData.hours * selectedPackage.rate;
+    // New formula: Total Cost = (Number of Guests × Package Rate per Person) + (Hours × Hourly Service Rate)
+    const packageCost = formData.guests * selectedPackage.rate;
+    const hourlyCost = formData.hours * HOURLY_SERVICE_RATE;
+    const totalCost = packageCost + hourlyCost;
     
-    setQuote(total);
+    // Rate per Person = Total Cost ÷ Number of Guests
+    const ratePerPerson = totalCost / formData.guests;
+    
+    setQuoteResult({
+      totalCost,
+      ratePerPerson
+    });
     setIsCalculated(true);
   };
 
@@ -97,7 +120,7 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
       hours: 0,
     });
     setErrors({});
-    setQuote(null);
+    setQuoteResult(null);
     setIsCalculated(false);
   };
 
@@ -174,7 +197,7 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
                   ) : (
                     packages.map((pkg) => (
                       <option key={pkg.id} value={pkg.id}>
-                        {pkg.name} - ${pkg.rate}/guest/hour
+                        {pkg.name} - ${pkg.rate}/guest
                       </option>
                     ))
                   )}
@@ -184,30 +207,30 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
               {/* Hours of Service */}
               <div className="space-y-2">
                 <Label htmlFor="hours" className="text-gray-300">
-                  Hours of Service *
+                  Hours of Service * (Min: {MIN_HOURS}h)
                 </Label>
                 <Input
                   id="hours"
                   type="number"
-                  min="1"
+                  min={MIN_HOURS}
                   value={formData.hours || ''}
                   onChange={(e) => handleInputChange('hours', parseInt(e.target.value) || 0)}
                   className="bg-gray-700 border-gray-600 text-white focus:border-red-600"
-                  placeholder="Enter hours of service"
+                  placeholder={`Enter hours (minimum ${MIN_HOURS})`}
                 />
                 {errors.hours && (
                   <p className="text-red-400 text-sm">{errors.hours}</p>
                 )}
               </div>
 
-              {/* Package Rate Display */}
+              {/* Hourly Service Rate Display */}
               <div className="space-y-2">
                 <Label className="text-gray-300">
-                  Rate per Guest per Hour
+                  Hourly Service Rate
                 </Label>
                 <div className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white">
                   <span className="text-red-500 font-bold">
-                    ${packages.find(pkg => pkg.id === formData.package)?.rate || 0}
+                    ${HOURLY_SERVICE_RATE}/hour
                   </span>
                 </div>
               </div>
@@ -235,7 +258,7 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
             </div>
 
             {/* Quote Result */}
-            {isCalculated && quote !== null && (
+            {isCalculated && quoteResult !== null && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -247,13 +270,19 @@ export function InstantQuoteForm({ serviceType }: InstantQuoteFormProps) {
                     <h3 className="text-2xl font-bold text-white">Estimated Quote</h3>
                   </div>
                   <p className="text-4xl font-bold text-white mb-2">
-                    ${quote.toLocaleString()}
+                    ${quoteResult.totalCost.toLocaleString()}
                   </p>
-                  <p className="text-red-100 text-sm">
+                  <p className="text-xl text-red-100 mb-2">
+                    Rate per Person: ${quoteResult.ratePerPerson.toFixed(2)}/person
+                  </p>
+                  <p className="text-red-100 text-sm mb-4">
                     This is an estimate and subject to change depending on final details.
                   </p>
-                  <div className="mt-4 text-xs text-red-200">
-                    <p>Calculation: {formData.guests} guests × {formData.hours} hours × ${packages.find(pkg => pkg.id === formData.package)?.rate || 0}/guest/hour</p>
+                  <div className="mt-4 text-xs text-red-200 bg-red-800 bg-opacity-50 p-3 rounded">
+                    <p className="font-semibold mb-1">Calculation Breakdown:</p>
+                    <p>Package Cost: {formData.guests} guests × ${packages.find(pkg => pkg.id === formData.package)?.rate || 0}/guest = ${(formData.guests * (packages.find(pkg => pkg.id === formData.package)?.rate || 0)).toLocaleString()}</p>
+                    <p>Service Cost: {formData.hours} hours × ${HOURLY_SERVICE_RATE}/hour = ${(formData.hours * HOURLY_SERVICE_RATE).toLocaleString()}</p>
+                    <p className="font-semibold mt-1">Total: ${quoteResult.totalCost.toLocaleString()}</p>
                   </div>
                 </div>
               </motion.div>

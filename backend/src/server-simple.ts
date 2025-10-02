@@ -17,9 +17,7 @@ const PORT = process.env.PORT || 5001;
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'https://staging.kockys.com',
-    process.env.ADMIN_URL || 'https://staging.kockys.com/admin',
-    'http://72.167.227.205:3003',
-    'http://72.167.227.205:4000'
+    process.env.ADMIN_URL || 'https://staging.kockys.com/admin'
   ],
   credentials: true
 }));
@@ -328,8 +326,8 @@ app.get('/api', (req: Request, res: Response) => {
 });
 
 // Start server
-app.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
+app.listen(PORT, () => {
   console.log(`Backend server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
-  console.log(`API available at: http://staging.kockys.com:${PORT}/api`);
+  console.log(`API available at: http://localhost:${PORT}/api`);
 });

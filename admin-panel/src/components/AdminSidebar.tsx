@@ -33,7 +33,8 @@ import {
   Mail,
   Inbox,
   PartyPopper,
-  Send
+  Send,
+  ChefHat
 } from 'lucide-react';
 import { auth } from '../lib/api/auth';
 import { handleLogout } from '../lib/utils/logout';
@@ -180,6 +181,7 @@ export default function AdminSidebar() {
         { name: 'Orders', path: '/orders/', icon: ShoppingBag },
         { name: 'Food Truck', path: '/food-truck/', icon: Truck },
         { name: 'Mobile Bar', path: '/mobile-bar/', icon: Wine },
+        { name: 'Catering', path: '/catering/', icon: ChefHat },
         { name: 'Events', path: '/events/', icon: PartyPopper },
       ]
     },

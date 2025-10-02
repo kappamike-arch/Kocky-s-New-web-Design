@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './lib/prisma';
 import { v4 as uuidv4 } from 'uuid';
-
-const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting CRM and Calendar data seed...');

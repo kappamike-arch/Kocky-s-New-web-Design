@@ -298,7 +298,7 @@ Additional Terms:
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Link
-            href="/inquiries"
+            href="/crm"
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />

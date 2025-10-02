@@ -5,14 +5,13 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
-import { PrismaClient } from '@prisma/client';
+import { connectPrisma, disconnectPrisma, prisma } from './lib/prisma';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 import { sanitizeMiddleware } from './middleware/sanitize';
-import { requestIdMiddleware } from './middleware/requestId';
 
 // Import routes
-import authRoutes from './routes/simple-auth.routes';
+import authRoutes from './routes/auth.routes';
 import reservationRoutes from './routes/reservation.routes';
 import foodTruckRoutes from './routes/foodtruck.routes';
 import mobileBarRoutes from './routes/mobilebar.routes';
@@ -29,37 +28,22 @@ import calendarRoutes from './routes/calendar.routes';
 import servicesRoutes from './routes/services.routes';
 import heroSettingsRoutes from './routes/hero-settings.routes';
 import emailTemplateRoutes from './routes/email-template.routes';
+import emailRoutes from './routes/email.routes';
+import azureEmailRoutes from './routes/azure-email.routes';
 import quoteConfigRoutes from './routes/quote-config.routes';
 import galleryRoutes from './routes/gallery.routes';
 import pageContentRoutes from './routes/page-content.routes';
 import enhancedMenuRoutes from './routes/enhanced-menu.routes';
 import unifiedFormsRoutes from './routes/unified-forms.routes';
 import analyticsRoutes from './routes/analytics.routes';
-import jobsRoutes from './routes/jobs.routes';
-import eventsRoutes from './routes/events.routes';
-import emailRoutes from './routes/email';
-import graphEmailRoutes from './routes/graphEmail.routes';
-import healthRoutes from './routes/health.routes';
-import stripeRoutes from './routes/stripe.routes';
-import paymentRoutes from './routes/payment.routes';
-import diagRoutes from './routes/diag.routes';
-import { emailScheduler } from './services/emailScheduler';
+import mediaRoutes from './routes/media.routes';
 
 // Load environment variables
 dotenv.config();
 
-// Initialize Prisma Client
-export const prisma = new PrismaClient();
-
 // Create Express app
 const app: Application = express();
 const PORT = process.env.PORT || 5001;
-
-// Production configuration
-const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://staging.kockys.com';
-
-// Helper to build absolute file URLs (use when persisting new files)
-export const fileUrl = (p: string) => `${PUBLIC_BASE_URL}${p.startsWith('/') ? p : '/' + p}`;
 
 // Security middleware with customized settings for uploads
 app.use(helmet({
@@ -67,7 +51,8 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https://staging.kockys.com", "https://images.unsplash.com"],
+      imgSrc: ["'self'", "data:", "http://localhost:*", "https://localhost:*", "http://72.167.227.205:*"],
+      mediaSrc: ["'self'", "data:", "https://staging.kockys.com"],
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       baseUri: ["'self'"],
@@ -82,17 +67,33 @@ app.use(helmet({
 }));
 app.use(compression());
 
-// CORS configuration - strict for production
+// CORS configuration
 const corsOptions = {
-  origin: ['https://staging.kockys.com'],
+  origin: function (origin: any, callback: any) {
+    // Allow requests from these origins
+    const allowedOrigins = [
+      'http://72.167.227.205:3003/',  // Frontend on 3003 (local dev)
+      'http://localhost:4000',  // Admin panel on 4000 (local dev) [[memory:7534915]]
+      'http://72.167.227.205:3003',  // Production Frontend
+      'http://72.167.227.205:4000',  // Production Admin panel
+      'https://staging.kockys.com',  // Production API
+      process.env.FRONTEND_URL,
+      process.env.ADMIN_URL
+    ].filter(Boolean);
+    
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all origins in development
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'Accept']
+  optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
-
-// Request ID middleware for tracing
-app.use(requestIdMiddleware);
 
 // Rate limiting - disabled for local development
 // Uncomment for production
@@ -103,27 +104,21 @@ app.use(requestIdMiddleware);
 // });
 // app.use('/api/', limiter);
 
-// Stripe webhook endpoint needs raw body (mount before json parser)
-app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
-
-// Body limits to 10 MB
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Body parsing middleware with increased limits for video uploads
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 // Input sanitization middleware to prevent XSS attacks
 app.use(sanitizeMiddleware);
 
-// Serve static uploads with caching
-app.use('/uploads', express.static('/home/stagingkockys/public_html/uploads', {
-  maxAge: '365d',
-  immutable: true
-}));
+// Serve static files from public_html/uploads (logos, videos, etc.) - web accessible
+app.use('/uploads', express.static('/home/stagingkockys/public_html/uploads'));
+
+// Also serve from backend/uploads for backward compatibility
+app.use('/backend-uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Legacy video files support (redirect to uploads/videos)
-app.use('/videos', express.static('/home/stagingkockys/public_html/uploads/videos', {
-  maxAge: '365d',
-  immutable: true
-}));
+app.use('/videos', express.static('/home/stagingkockys/public_html/uploads/videos'));
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -152,20 +147,15 @@ app.use('/api/calendar', calendarRoutes);
 app.use('/api/services', servicesRoutes);  // Fixed: was incorrectly using /api/settings
 app.use('/api/hero-settings', heroSettingsRoutes);
 app.use('/api/email-templates', emailTemplateRoutes);
+app.use('/api/email', emailRoutes);
+app.use('/api/azure-email', azureEmailRoutes);
 app.use('/api/quote-config', quoteConfigRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/page-content', pageContentRoutes);
 app.use('/api/enhanced-menu', enhancedMenuRoutes);
 app.use('/api/unified-forms', unifiedFormsRoutes);
 app.use('/api/analytics', analyticsRoutes);
-app.use('/api/jobs', jobsRoutes);
-app.use('/api/events', eventsRoutes);
-app.use('/api/email', emailRoutes);
-app.use('/api/graph-email', graphEmailRoutes);
-app.use('/api/stripe', stripeRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/diag', diagRoutes);
-app.use('/api', healthRoutes);
+app.use('/api/media', mediaRoutes);
 
 // Welcome route
 app.get('/api', (req: Request, res: Response) => {
@@ -187,7 +177,7 @@ app.get('/api', (req: Request, res: Response) => {
       forms: '/api/forms',
       crm: '/api/crm',
       calendar: '/api/calendar',
-      events: '/api/events'
+      media: '/api/media'
     }
   });
 });
@@ -204,23 +194,20 @@ app.use((req: Request, res: Response) => {
 app.use(errorHandler);
 
 // Graceful shutdown
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  await prisma.$disconnect();
+const handleShutdown = async (signal: string) => {
+  logger.info(`${signal} signal received: closing HTTP server`);
+  await disconnectPrisma();
   process.exit(0);
-});
+};
 
-process.on('SIGINT', async () => {
-  logger.info('SIGINT signal received: closing HTTP server');
-  await prisma.$disconnect();
-  process.exit(0);
-});
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGINT', () => handleShutdown('SIGINT'));
 
 // Start server
 const startServer = async () => {
   try {
     // Test database connection
-    await prisma.$connect();
+    await connectPrisma();
     logger.info('Database connected successfully');
     
     // Initialize hero settings in database
@@ -228,14 +215,10 @@ const startServer = async () => {
     await initializeHeroSettings();
     logger.info('Hero settings initialized');
 
-    // Initialize email scheduler
-    logger.info('Email scheduler initialized');
-
-    app.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
-      logger.info(`Server is running on 0.0.0.0:${PORT}`);
+    app.listen(PORT, () => {
+      logger.info(`Server is running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
-      logger.info(`Public Base URL: ${PUBLIC_BASE_URL}`);
-      logger.info(`API Base URL: ${PUBLIC_BASE_URL}/api`);
+      logger.info(`Frontend URL: ${process.env.FRONTEND_URL}`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);

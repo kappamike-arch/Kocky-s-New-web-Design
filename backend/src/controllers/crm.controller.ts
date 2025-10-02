@@ -1,11 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../server';
-import { sendEmail, sendQuoteWithAccount, getEmailAccounts } from '../utils/email';
-import { EmailAccount } from '../services/emailService';
+import { prisma } from '../lib/prisma';
+import { sendEmail } from '../utils/email';
 import { AuthRequest } from '../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
-import { createPaymentLink } from '../utils/payment';
 
 // Get all inquiries with filtering
 export const getInquiries = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -166,8 +164,7 @@ export const createQuote = async (req: AuthRequest, res: Response, next: NextFun
       terms = '',
       notes = '', 
       quoteItems = [],
-      sendToCustomer = false,
-      emailAccount = 'quotes' // Default to quotes account
+      sendToCustomer = false 
     } = req.body;
 
     console.log('[CRM] Quote request body:', { 
@@ -301,57 +298,15 @@ export const createQuote = async (req: AuthRequest, res: Response, next: NextFun
       `;
 
       try {
-        // Generate payment link if amount is provided
-        let paymentLink = null;
-        if (amount && process.env.STRIPE_SECRET_KEY) {
-          try {
-            const amountInCents = Math.round(parseFloat(amount) * 100);
-            const depositInCents = quote.depositAmount ? Math.round(Number(quote.depositAmount) * 100) : 0;
-            
-            paymentLink = await createPaymentLink({
-              quoteId: quote.id,
-              quoteNumber,
-              customerEmail: inquiry.email,
-              customerName: inquiry.name,
-              amount: amountInCents,
-              depositAmount: depositInCents,
-              isDeposit: quote.depositType !== null && quote.depositAmount !== null,
-              description: `Payment for ${inquiry.serviceType} Service - ${quoteNumber}`,
-            });
-
-            // Save payment link to quote
-            await prisma.quote.update({
-              where: { id: quote.id },
-              data: { paymentLink },
-            });
-          } catch (paymentError) {
-            console.error('Failed to generate payment link:', paymentError);
-            // Continue without payment link
+        await sendEmail({
+          to: inquiry.email,
+          subject: `Quote #${quoteNumber} - Kocky's Bar & Grill`,
+          template: 'custom',
+          data: {
+            html: emailHtml,
+            text: `Quote from Kocky's Bar & Grill\n\nQuote #${quoteNumber}\n\nTotal: $${amount}\n\nPlease see the attached quote details and feel free to contact us with any questions.`
           }
-        }
-
-        // Use the new multi-account email service
-        const quoteData = {
-          customerName: inquiry.name,
-          customerEmail: inquiry.email,
-          quoteNumber,
-          serviceType: inquiry.serviceType,
-          eventDate: inquiry.eventDate ? new Date(inquiry.eventDate).toLocaleDateString() : undefined,
-          totalAmount: parseFloat(amount),
-          depositAmount: quote.depositAmount ? Number(quote.depositAmount) : undefined,
-          items: quote.quoteItems.map((item: any) => ({
-            description: item.description,
-            quantity: item.quantity,
-            unitPrice: parseFloat(item.unitPrice.toString()),
-            subtotal: parseFloat(item.total.toString())
-          })),
-          validUntil: validUntil ? new Date(validUntil).toLocaleDateString() : 'TBD',
-          paymentLink: paymentLink || undefined,
-          terms,
-          notes
-        };
-
-        await sendQuoteWithAccount(quoteData, emailAccount as EmailAccount);
+        });
 
         // Log email activity
         await prisma.emailLog.create({
@@ -552,19 +507,6 @@ export const exportInquiries = async (req: AuthRequest, res: Response, next: Nex
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename=inquiries-${new Date().toISOString().split('T')[0]}.csv`);
     res.send(csvContent);
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Get available email accounts
-export const getEmailAccountsList = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const accounts = getEmailAccounts();
-    res.json({
-      success: true,
-      data: accounts
-    });
   } catch (error) {
     next(error);
   }

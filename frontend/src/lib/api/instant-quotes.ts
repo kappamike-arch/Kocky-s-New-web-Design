@@ -1,5 +1,15 @@
 import { api } from './client';
 
+// Utility function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  if (!text) return text;
+  
+  // Create a temporary div element to decode HTML entities
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
 export interface InstantQuotePackage {
   id: string;
   name: string;
@@ -22,7 +32,7 @@ export const instantQuotesAPI = {
         .filter((pkg: any) => pkg.instantQuoteEnabled && pkg.instantQuoteRate > 0)
         .map((pkg: any) => ({
           id: pkg.id,
-          name: pkg.name,
+          name: decodeHtmlEntities(pkg.name || ''),
           rate: pkg.instantQuoteRate
         }));
       
@@ -50,3 +60,5 @@ function getDefaultPackages(serviceType: 'mobile-bar' | 'food-truck'): InstantQu
     ];
   }
 }
+
+

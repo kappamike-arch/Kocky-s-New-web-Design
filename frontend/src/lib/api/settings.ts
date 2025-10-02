@@ -142,6 +142,12 @@ export const settings = {
     return response.data;
   },
 
+  // Send test email
+  sendTestEmail: async (email: string) => {
+    const response = await api.post('/settings/test-email', { email });
+    return response.data;
+  },
+
   // Reset to defaults
   reset: async () => {
     const response = await api.post('/settings/reset');

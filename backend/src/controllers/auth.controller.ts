@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../server';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import { sendEmail } from '../utils/email';
 import { generateToken, generateRefreshToken } from '../utils/tokens';
@@ -67,13 +67,21 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
+    console.log('[Auth] Incoming login', { email, passwordLength: password?.length });
 
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    const passwordMatches = user ? await bcrypt.compare(password, user.password) : false;
+    console.log('[Auth] Login attempt', {
+      email,
+      userFound: !!user,
+      passwordMatches,
+    });
+
+    if (!user || !passwordMatches) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',

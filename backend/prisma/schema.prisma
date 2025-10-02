@@ -21,6 +21,7 @@ model User {
   accounts          Account[]
   foodTruckBookings FoodTruckBooking[]
   mobileBarBookings MobileBarBooking[]
+  cateringRequests  CateringRequest[]
   orders            Order[]
   reservations      Reservation[]
   sessions          Session[]
@@ -121,6 +122,26 @@ model MobileBarBooking {
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
   user             User?                  @relation(fields: [userId], references: [id])
+}
+
+model CateringRequest {
+  id                String             @id @default(cuid())
+  userId            String?
+  name              String
+  email             String
+  phone             String?
+  eventDate         DateTime?
+  location          String?
+  guestCount        Int?
+  budget            String?
+  status            CateringStatus     @default(NEW)
+  details           String?
+  specialRequests   String?
+  notes             String?
+  confirmationCode  String             @unique @default(cuid())
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User?              @relation(fields: [userId], references: [id])
 }
 
 model NewsletterSubscriber {
@@ -382,7 +403,13 @@ model EmailAccount {
 model EmailTemplate {
   id        Int      @id @default(autoincrement())
   name      String
+  slug      String?  @unique
   subject   String
+  html      String?
+  text      String?
+  variables Json?
+  logoUrl   String?
+  bannerUrl String?
   body      String
   sender    String?
   category  String   @default("general")
@@ -728,6 +755,15 @@ enum MobileBarBookingStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
+}
+
+enum CateringStatus {
+  NEW
+  CONTACTED
+  QUOTED
+  APPROVED
+  COMPLETED
+  CANCELLED
 }
 
 enum MenuCategory {
