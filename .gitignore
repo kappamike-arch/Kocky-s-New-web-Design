@@ -42,3 +42,8 @@ logs/
 
 # OS
 Thumbs.db
+
+# Next.js cache files
+.next/cache/
+.next/static/
+.next/server/
