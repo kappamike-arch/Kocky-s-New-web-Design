@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../server';
-import { logger } from '../utils/logger';
-import nodemailer from 'nodemailer';
+import { prisma } from '../lib/prisma';
 
 const getOrCreateSettings = async () => {
   let settings = await prisma.settings.findFirst();
@@ -58,43 +56,23 @@ const getOrCreateSettings = async () => {
 
 export const getPublicSettings = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Set cache control headers to prevent caching
-    res.set({
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    });
-
     const settings = await getOrCreateSettings();
     
-    // Helper function to decode HTML entities
-    const decodeHtmlEntities = (str: string): string => {
-      if (typeof str !== 'string') return str;
-      return str
-        .replace(/&#x27;/g, "'")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#x2F;/g, "/");
-    };
-
-    // Return only public information with decoded HTML entities
+    // Return only public information
     const publicSettings = {
-      siteName: decodeHtmlEntities(settings.siteName),
-      siteDescription: decodeHtmlEntities(settings.siteDescription || ''),
-      contactEmail: decodeHtmlEntities(settings.contactEmail),
-      contactPhone: decodeHtmlEntities(settings.contactPhone),
-      address: decodeHtmlEntities(settings.address),
-      city: decodeHtmlEntities(settings.city),
-      state: decodeHtmlEntities(settings.state),
-      zipCode: decodeHtmlEntities(settings.zipCode),
-      country: decodeHtmlEntities(settings.country),
+      siteName: settings.siteName,
+      siteDescription: settings.siteDescription,
+      contactEmail: settings.contactEmail,
+      contactPhone: settings.contactPhone,
+      address: settings.address,
+      city: settings.city,
+      state: settings.state,
+      zipCode: settings.zipCode,
+      country: settings.country,
       businessHours: settings.businessHours,
       socialMedia: settings.socialMedia,
       reservationSettings: settings.reservationSettings,
-      onlineOrderingUrl: decodeHtmlEntities(settings.onlineOrderingUrl || ''),
-      updatedAt: settings.updatedAt,
+      onlineOrderingUrl: settings.onlineOrderingUrl,
     };
 
     res.json({ success: true, settings: publicSettings });
@@ -105,44 +83,12 @@ export const getPublicSettings = async (req: Request, res: Response, next: NextF
 
 export const getAllSettings = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Set cache control headers to prevent caching
-    res.set({
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    });
-
     const settings = await getOrCreateSettings();
-    
-    // Helper function to decode HTML entities
-    const decodeHtmlEntities = (str: string): string => {
-      if (typeof str !== 'string') return str;
-      return str
-        .replace(/&#x27;/g, "'")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#x2F;/g, "/");
-    };
-
-    // Decode HTML entities in the settings object
-    const decodedSettings = {
-      ...settings,
-      siteName: decodeHtmlEntities(settings.siteName),
-      siteDescription: decodeHtmlEntities(settings.siteDescription || ''),
-      contactEmail: decodeHtmlEntities(settings.contactEmail),
-      contactPhone: decodeHtmlEntities(settings.contactPhone),
-      address: decodeHtmlEntities(settings.address),
-      city: decodeHtmlEntities(settings.city),
-      state: decodeHtmlEntities(settings.state),
-      zipCode: decodeHtmlEntities(settings.zipCode),
-      country: decodeHtmlEntities(settings.country),
-      onlineOrderingUrl: decodeHtmlEntities(settings.onlineOrderingUrl || ''),
-    };
-
-    // Return settings directly for compatibility
-    res.json(decodedSettings);
+    // Return settings in wrapped format to match frontend expectations
+    res.json({
+      success: true,
+      data: settings
+    });
   } catch (error) {
     next(error);
   }
@@ -150,13 +96,6 @@ export const getAllSettings = async (req: Request, res: Response, next: NextFunc
 
 export const updateSettings = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Set cache control headers to prevent caching
-    res.set({
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    });
-
     const settings = await getOrCreateSettings();
     
     // Extract and validate the data from request body
@@ -222,19 +161,9 @@ export const updateSettings = async (req: Request, res: Response, next: NextFunc
         : businessHours;
     }
     
-    console.log('Updating settings with data:', updateData);
-    console.log('Settings ID:', settings.id);
-    
     const updatedSettings = await prisma.settings.update({
       where: { id: settings.id },
       data: updateData,
-    });
-
-    console.log('Settings updated successfully:', {
-      id: updatedSettings.id,
-      contactPhone: updatedSettings.contactPhone,
-      address: updatedSettings.address,
-      updatedAt: updatedSettings.updatedAt
     });
 
     res.json({
@@ -330,101 +259,5 @@ export const updatePaymentSettings = async (req: Request, res: Response, next: N
     });
   } catch (error) {
     next(error);
-  }
-};
-
-// Test email settings
-export const testEmailSettings = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { email, account } = req.body;
-    
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email address is required',
-      });
-    }
-
-    // Check if SMTP credentials are configured
-    if (!process.env.SMTP_PASS || process.env.SMTP_PASS === 'your-microsoft-365-app-password-here') {
-      return res.status(400).json({
-        success: false,
-        message: 'SMTP password not configured. Please add your Microsoft 365 app password to the .env file.',
-        details: 'Update SMTP_PASS in .env with your 16-character app password from Microsoft 365'
-      });
-    }
-
-    logger.info(`Testing email to: ${email}, account: ${account || 'default'}`);
-    logger.info(`SMTP Config: Host=${process.env.SMTP_HOST}, User=${process.env.SMTP_USER}, Port=${process.env.SMTP_PORT}`);
-
-    // Create transporter and test email directly
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.office365.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false, // Use TLS
-      auth: {
-        user: process.env.SMTP_USER || 'Mike@Kockys.com',
-        pass: process.env.SMTP_PASS || '',
-      },
-      tls: {
-        ciphers: 'SSLv3',
-        rejectUnauthorized: false
-      },
-      requireTLS: true,
-    });
-
-    // Verify connection first
-    await transporter.verify();
-    logger.info('SMTP connection verified successfully');
-
-    // Send test email
-    const info = await transporter.sendMail({
-      from: `"Kocky's Bar & Grill" <${process.env.SMTP_USER || 'Mike@Kockys.com'}>`,
-      to: email,
-      subject: '🧪 Test Email from Kocky\'s',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: #b22222; color: white; padding: 20px; text-align: center;">
-            <h1>✅ Email Test Successful!</h1>
-          </div>
-          <div style="padding: 20px; background: #f9f9f9;">
-            <p>This is a test email from Kocky's Bar & Grill email system.</p>
-            <p><strong>From:</strong> ${process.env.SMTP_USER}</p>
-            <p><strong>Account:</strong> ${account || 'default'}</p>
-            <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-            <p>Your email configuration is working correctly!</p>
-          </div>
-        </div>
-      `,
-    });
-
-    logger.info('Test email sent successfully:', { messageId: info.messageId });
-    
-    res.json({
-      success: true,
-      message: `Test email sent successfully! Message ID: ${info.messageId}`,
-    });
-  } catch (error) {
-    logger.error('Test email settings error:', error);
-    
-    // Provide more specific error messages
-    let errorMessage = 'Unknown error';
-    if (error instanceof Error) {
-      if (error.message.includes('535')) {
-        errorMessage = 'Authentication failed. Please check your Microsoft 365 app password.';
-      } else if (error.message.includes('ECONNREFUSED')) {
-        errorMessage = 'Cannot connect to SMTP server. Please check your SMTP settings.';
-      } else if (error.message.includes('ENOTFOUND')) {
-        errorMessage = 'SMTP host not found. Please check your SMTP_HOST setting.';
-      } else {
-        errorMessage = error.message;
-      }
-    }
-    
-    res.status(500).json({
-      success: false,
-      message: `Email test failed: ${errorMessage}`,
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
   }
 };
